@@ -3,7 +3,7 @@
 
 licenses(["notice"])
 
-package(default_visibility = ["//research/lux/earthsea:__subpackages__"])
+package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "base_env",
