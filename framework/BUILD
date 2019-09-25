@@ -3,7 +3,9 @@
 
 licenses(["notice"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+)
 
 py_library(
     name = "base_env",
@@ -241,5 +243,18 @@ py_test(
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/flags",
         "@seed_rl//:grpc",
+    ],
+)
+
+py_library(
+    name = "eval_metric",
+    srcs = ["eval_metric.py"],
+)
+
+py_library(
+    name = "hparam",
+    srcs = ["hparam.py"],
+    deps = [
+        "@six_archive//:six",
     ],
 )

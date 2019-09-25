@@ -1,0 +1,36 @@
+[
+  {
+    "distance": 5.32,
+    "scan": "gZ6f7yhEvPG",
+    "path_id": 1304,
+    "path": [
+      "80929af5cf234ae38ac3a2a4e60e4342",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "46cecea0b30e4786b673f5e951bf82d4"
+    ],
+    "heading": 6.101,
+    "instructions": [
+      "Walk forward to the padded benches. Turn right and walk between them. Wait near the first pillow on the left, close to the altar. ",
+      "Take a right down the lane through the two sets of pews, walk towards the left corner of the church and stop at the one step. ",
+      "Walk around the pews and towards the front of the room with the paintings of religious figures and a stage area. "
+    ]
+  },
+  {
+    "distance": 5.35,
+    "scan": "gZ6f7yhEvPG",
+    "path_id": 318,
+    "path": [
+      "29b20fa80dcd4771974303c1ccd8953f",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "0ee20663dfa34b438d48750ddcd7366c"
+    ],
+    "heading": 5.01,
+    "instructions": [
+      "Walk towards the benches and up the aisle down the middle. At the end of the aisle take a right and stop in front of the cabinet. ",
+      "Walk up the aisle and wait to the left of the altar. ",
+      "go towards the middle of the aisle. Take a left and go to the front of the room at the end of the aisle. Take a left and stop in front of the small piece of furniture and painting. "
+    ]
+  }
+]

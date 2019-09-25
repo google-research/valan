@@ -23,7 +23,46 @@ import pickle
 import time
 
 from absl import logging
+import numpy as np
 import tensorflow.compat.v2 as tf
+
+
+def levenshtein(seq1, seq2):
+  """Computes Levenshtein edit distance between two sequences.
+
+  Adapted from online tutorial by Frank Hofmann.
+
+  Args:
+    seq1: The first sequence of any datatype that implements equality operator.
+    seq2: The second sequence of any datatype that implements equality operator.
+
+  Returns:
+    Levenshtein edit distance (integer) between the two sequences.
+  """
+  size_x = len(seq1) + 1
+  size_y = len(seq2) + 1
+  mat = np.zeros((size_x, size_y))
+  for x in range(size_x):
+    mat[x, 0] = x
+  for y in range(size_y):
+    mat[0, y] = y
+
+  for x in range(1, size_x):
+    for y in range(1, size_y):
+      if seq1[x-1] == seq2[y-1]:
+        mat[x, y] = min(
+            mat[x-1, y] + 1,
+            mat[x-1, y-1],
+            mat[x, y-1] + 1
+        )
+      else:
+        mat[x, y] = min(
+            mat[x-1, y] + 1,
+            mat[x-1, y-1] + 1,
+            mat[x, y-1] + 1
+            )
+
+  return mat[size_x - 1, size_y - 1]
 
 
 def stack_nested_tensors(list_of_nests):

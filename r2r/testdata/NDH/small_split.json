@@ -1,0 +1,101 @@
+[
+  {
+    "distance": 5.32,
+    "scan": "gZ6f7yhEvPG",
+    "inst_idx": 1304,
+    "target": "fireplace",
+    "dialog_history": [
+      {
+        "nav_idx": 0,
+        "role": "navigator",
+        "message": "Hi. Which room do I have to go to?"
+      },
+      {
+        "nav_idx": 0,
+        "role": "oracle",
+        "message": "hello"
+      },
+      {
+        "nav_idx": 0,
+        "role": "navigator",
+        "message": "Hi.Where shoul I go to?"
+      },
+      {
+        "nav_idx": 0,
+        "role": "oracle",
+        "message": "go to the room with fireplace"
+      }
+    ],
+    "planner_path": [
+      "80929af5cf234ae38ac3a2a4e60e4342",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "46cecea0b30e4786b673f5e951bf82d4"
+    ],
+    "end_panos": [
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "46cecea0b30e4786b673f5e951bf82d4"
+    ],
+    "player_path": [
+      "80929af5cf234ae38ac3a2a4e60e4342",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "46cecea0b30e4786b673f5e951bf82d4"
+    ],
+    "start_pano": {
+      "heading": 6.101,
+      "elevation": 17.288158660514817,
+      "pano": "29b20fa80dcd4771974303c1ccd8953f"
+    }
+  },
+  {
+    "distance": 5.35,
+    "scan": "gZ6f7yhEvPG",
+    "inst_idx": 318,
+    "target": "fireplace",
+    "dialog_history": [
+      {
+        "nav_idx": 0,
+        "role": "navigator",
+        "message": "Hi. Which room do I have to go to?"
+      },
+      {
+        "nav_idx": 0,
+        "role": "oracle",
+        "message": "hello"
+      },
+      {
+        "nav_idx": 0,
+        "role": "navigator",
+        "message": "Hi.Where shoul I go to?"
+      },
+      {
+        "nav_idx": 0,
+        "role": "oracle",
+        "message": "go to the room with fireplace"
+      }
+    ],
+    "planner_path": [
+      "29b20fa80dcd4771974303c1ccd8953f",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "0ee20663dfa34b438d48750ddcd7366c"
+    ],
+    "end_panos": [
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "0ee20663dfa34b438d48750ddcd7366c"
+    ],
+    "player_path": [
+      "29b20fa80dcd4771974303c1ccd8953f",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "0ee20663dfa34b438d48750ddcd7366c"
+    ],
+    "start_pano": {
+      "heading": 5.01,
+      "elevation": 17.288158660514817,
+      "pano": "29b20fa80dcd4771974303c1ccd8953f"
+    }
+  }
+]
