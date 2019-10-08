@@ -215,18 +215,25 @@ def run_with_address(
       actor_output = tf.nest.pack_sequence_as(specs, actor_output)
       (initial_agent_state, env_output, actor_agent_output, actor_action,
        loss_type, info) = actor_output
-      optimizer.minimize(
-          functools.partial(
-              loss_fns.compute_loss,
-              study_loss_types=study_loss_types,
-              current_batch_loss_type=loss_type,
-              agent=agent,
-              agent_state=initial_agent_state,
-              env_output=env_output,
-              actor_agent_output=actor_agent_output,
-              actor_action=actor_action,
-              num_steps=iterations), agent.trainable_variables)
-      return info
+      with tf.GradientTape() as tape:
+        loss = loss_fns.compute_loss(
+            study_loss_types=study_loss_types,
+            current_batch_loss_type=loss_type,
+            agent=agent,
+            agent_state=initial_agent_state,
+            env_output=env_output,
+            actor_agent_output=actor_agent_output,
+            actor_action=actor_action,
+            num_steps=iterations)
+      grads = tape.gradient(loss, agent.trainable_variables)
+      grad_norms = {}
+      for var, grad in zip(agent.trainable_variables, grads):
+        # For parameters which are initialized but not used for loss
+        # computation, gradient tape would return None.
+        if grad is not None:
+          grad_norms[var.name] = tf.norm(grad)
+      optimizer.apply_gradients(zip(grads, agent.trainable_variables))
+      return info, grad_norms
 
     return step_fn(next(iterator))
 
@@ -268,9 +275,12 @@ def run_with_address(
 
       with utils.WallTimer() as wt:
         with tf.device(agent_device):
-          info = train_step(iterator)
+          info, grad_norms = train_step(iterator)
       tf.summary.scalar(
           'steps_summary/step_seconds', wt.duration, step=iterations)
+      norm_summ_family = 'grad_norms/'
+      for name, norm in grad_norms.items():
+        tf.summary.scalar(norm_summ_family + name, norm, step=iterations)
 
       if current_time - last_log_time >= 120:
         num_env_frames = iterations * hparams['iter_frame_ratio']

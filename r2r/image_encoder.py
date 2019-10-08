@@ -28,18 +28,26 @@ FLAGS = flags.FLAGS
 class ImageEncoder(tf.keras.Model):
   """Encode text using glove embedding and Bi-LSTM."""
 
-  def __init__(self, attention_space_size, num_lstm_units, num_hidden_layers=1):
-    super(ImageEncoder, self).__init__()
+  def __init__(self,
+               attention_space_size,
+               num_lstm_units,
+               num_hidden_layers=1,
+               name=None):
+    super(ImageEncoder, self).__init__(name=name if name else 'image_encoder')
     # Projection layers to do attention pooling.
-    self._projection_hidden_layer = tf.keras.layers.Dense(attention_space_size)
-    self._projection_image_feature = tf.keras.layers.Dense(attention_space_size)
+    self._projection_hidden_layer = tf.keras.layers.Dense(
+        attention_space_size, name='project_hidden')
+    self._projection_image_feature = tf.keras.layers.Dense(
+        attention_space_size, name='project_feature')
 
     self._cells = []
-    for _ in range(num_hidden_layers):
-      self._cells.append(tf.keras.layers.LSTMCell(num_lstm_units))
+    for layer_id in range(num_hidden_layers):
+      self._cells.append(
+          tf.keras.layers.LSTMCell(
+              num_lstm_units, name='lstm_layer_{}'.format(layer_id)))
     self.history_context_encoder = tf.keras.layers.StackedRNNCells(self._cells)
 
-    self.attention = tf.keras.layers.Attention(use_scale=True)
+    self.attention = tf.keras.layers.Attention(use_scale=True, name='attention')
 
   def call(self, image_features, current_lstm_state):
     """Function call.
@@ -79,4 +87,3 @@ class ImageEncoder(tf.keras.Model):
         v_t, current_lstm_state)
 
     return (next_lstm_output, next_state)
-

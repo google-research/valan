@@ -51,23 +51,27 @@ class R2RAgent(base_agent.BaseAgent):
     # Text attention.
     self._text_attention_size = 512
     self._text_attention_project_hidden = tf.keras.layers.Dense(
-        self._text_attention_size)
+        self._text_attention_size, name='text_attention_project_hidden')
     self._text_attention_project_text = tf.keras.layers.Dense(
-        self._text_attention_size)
-    self._text_attention = tf.keras.layers.Attention(use_scale=True)
+        self._text_attention_size, name='text_attention_project_text')
+    self._text_attention = tf.keras.layers.Attention(
+        use_scale=True, name='text_attention')
 
     # Visual attention.
     self._visual_attention_size = 256
     self._visual_attention_project_ctext = tf.keras.layers.Dense(
-        self._visual_attention_size)
+        self._visual_attention_size, name='vis_attention_project_ctext')
     self._visual_attention_project_feature = tf.keras.layers.Dense(
-        self._visual_attention_size)
-    self._visual_attention = tf.keras.layers.Attention(use_scale=True)
+        self._visual_attention_size, name='vis_attention_project_feature')
+    self._visual_attention = tf.keras.layers.Attention(
+        use_scale=True, name='vis_attention')
 
     # Action predictor projection.
     self._action_projection_size = 256
-    self._project_feature = tf.keras.layers.Dense(self._action_projection_size)
-    self._project_action = tf.keras.layers.Dense(self._action_projection_size)
+    self._project_feature = tf.keras.layers.Dense(
+        self._action_projection_size, name='action_layer_project_feature')
+    self._project_action = tf.keras.layers.Dense(
+        self._action_projection_size, name='action_layer_project_action')
     # Dot product over the last dimension.
     self._dot_product = tf.keras.layers.Dot(axes=2)
 
@@ -75,10 +79,10 @@ class R2RAgent(base_agent.BaseAgent):
     self._value_network = self._get_value_network()
 
   def _get_value_network(self):
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(64))
+    model = tf.keras.Sequential(name='value_net')
+    model.add(tf.keras.layers.Dense(64, name='hidden_layer'))
     model.add(tf.keras.layers.ReLU())
-    model.add(tf.keras.layers.Dense(1))
+    model.add(tf.keras.layers.Dense(1, name='logit_layer'))
     return model
 
   def _get_initial_state(self, observation, batch_size):

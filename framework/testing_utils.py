@@ -109,6 +109,7 @@ class MockAgent(base_agent.BaseAgent):
     self._state_size = 5
     # This matches the action space of MockEnv
     self._action_space_size = 2
+    self._logits_layer = tf.keras.layers.Dense(self._action_space_size)
     self._agent_spec = common.AgentOutput(
         policy_logits=tf.TensorSpec(
             shape=[unroll_length + 1, 2], dtype=tf.float32),
@@ -133,8 +134,7 @@ class MockAgent(base_agent.BaseAgent):
 
   def _head(self, neck_output):
     return common.AgentOutput(
-        policy_logits=tf.zeros(
-            shape=[tf.shape(neck_output)[0], self._action_space_size]),
+        policy_logits=self._logits_layer(neck_output),
         baseline=tf.ones(shape=[tf.shape(neck_output)[0]]))
 
 

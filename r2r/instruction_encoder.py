@@ -36,8 +36,10 @@ class InstructionEncoder(tf.keras.Model):
                pretrained_embed_path,
                oov_bucket_size,
                vocab_size=1082,
-               word_embed_dim=300):
-    super(InstructionEncoder, self).__init__()
+               word_embed_dim=300,
+               name=None):
+    super(InstructionEncoder,
+          self).__init__(name=name if name else 'ins_encoder')
     self._word_embeddings = self._get_embedding_layer(pretrained_embed_path,
                                                       oov_bucket_size,
                                                       vocab_size,
@@ -79,7 +81,8 @@ class InstructionEncoder(tf.keras.Model):
         vocab_size + oov_buckets_size,
         embed_dim,
         embeddings_initializer=embeddings_initializer,
-        mask_zero=True)
+        mask_zero=True,
+        name='embedding')
 
   def get_embeddings(self, ids):
     """Compute word embeddings.
@@ -105,9 +108,11 @@ class InstructionEncoder(tf.keras.Model):
         last N are backward states.
     """
     self._cells = []
-    for _ in range(num_hidden_layers):
+    for layer_id in range(num_hidden_layers):
 
-      self._cells.append(tf.keras.layers.LSTMCell(hidden_dim))
+      self._cells.append(
+          tf.keras.layers.LSTMCell(
+              hidden_dim, name='lstm_layer_{}'.format(layer_id)))
 
     self._cells_rnn = tf.keras.layers.RNN(
         self._cells, return_sequences=True, return_state=True)
