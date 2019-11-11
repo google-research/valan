@@ -32,9 +32,9 @@ py_library(
         ":problem_type",
         ":utils",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
-        "@seed_rl//:grpc",
         "@six_archive//:six",
     ],
 )
@@ -52,9 +52,9 @@ py_library(
         ":utils",
         "//tensorflow:tensorflow_py",
         "//tensorflow/contrib/rnn:rnn_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
-        "@seed_rl//:grpc",
     ],
 )
 
@@ -113,8 +113,8 @@ py_test(
         ":actor_config",
         ":testing_utils",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
-        "@seed_rl//:grpc",
     ],
 )
 
@@ -127,8 +127,8 @@ py_test(
         ":testing_utils",
         ":utils",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
-        "@seed_rl//:grpc",
     ],
 )
 
@@ -199,9 +199,9 @@ py_library(
         ":problem_type",
         ":utils",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
-        "@seed_rl//:grpc",
     ],
 )
 
@@ -213,8 +213,8 @@ py_test(
         ":eval_actor",
         ":testing_utils",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
-        "@seed_rl//:grpc",
     ],
 )
 
@@ -226,9 +226,9 @@ py_library(
         ":common",
         ":learner_config",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
-        "@seed_rl//:grpc",
         "@six_archive//:six",
     ],
 )
@@ -241,8 +241,8 @@ py_test(
         ":common",
         ":eval_aggregator",
         "//tensorflow:tensorflow_py",
+        "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
-        "@seed_rl//:grpc",
     ],
 )
 

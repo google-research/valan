@@ -1,0 +1,6 @@
+INSTRUCTION	PANO 1	PANO 2	CLASS	PATH IDX	SCAN IDX
+Walk down one flight of stairs and stop on the landing. 	af3af33b0120469c9a00daa0d0b36799	5be145994f974347850a48cecd04cdcd	RELATED	6250	VLzqgDo317F
+Walk into the hallway and through the entrance to the kitchen area. Walk  Passed the sink and stove area and stop between the refrigerator and dining table. 	814d9aba371640e5a70bcb7833bfe08f	1b48df86b7a149fa8e90161265def866	UNRELATED	48	8WUmhLawc2A
+Walk into the hallway and through the entrance to the kitchen area. Walk  Passed the sink and stove area and stop between the refrigerator and dining table. 	1b48df86b7a149fa8e90161265def866	STOP	RELATED	48	8WUmhLawc2A
+Walk through the kitchen. Go past the sink and stove stand in front of the dining table on the bench side. 	6c4ef6ac616042bc9fe4adc5f6d21b10	f553a3287fb2438b979f09b09448c7c0	UNRELATED	48	8WUmhLawc2A
+Walk through the kitchen. Go past the sink and stove stand in front of the dining table on the bench side. 	1b48df86b7a149fa8e90161265def866	STOP	RELATED	48	8WUmhLawc2A
