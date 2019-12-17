@@ -236,6 +236,82 @@ def read_specs(logdir):
     return pickle.load(f)
 
 
+
+def circular_pad(input_tensor, axis, padding):
+  """Pads tensor circularly.
+
+  More specifically, pad on the right with the tensor values from the left of
+  the tensor, as if you had concatenated the tensor on the right and vice versa.
+
+  Args:
+    input_tensor: typically a batch of input "images"
+    axis: on which to perform the circluar padding
+    padding: See tf.nn.conv2d arg: padding
+
+  Returns:
+    Tensor of shape BxHxWxC2
+  """
+  assert 0 <= axis < len(input_tensor.shape), 'Axis out of bounds'
+  multiples = [1] * len(input_tensor.shape)
+  multiples[axis] = 3
+  tiled_input = tf.tile(input_tensor, multiples)
+  left = input_tensor.shape[axis] - padding[0]
+  right = 2 * input_tensor.shape[axis] + padding[1]
+
+  begin = [0] * len(input_tensor.shape)
+  end = list(input_tensor.shape)
+  begin[axis] = left
+  end[axis] = right
+  size = [a - b for a, b in zip(end, begin)]
+
+  output_tensor = tf.slice(tiled_input, begin, size)
+  # Do a shape assert
+  return output_tensor
+
+
+def parallel_conv2d(inputs, filters, strides, padding):
+  """Applies each filter in the batch of filters to each input.
+
+  tf.nn.conv2d only supports applying the same filter on a batch of inputs.
+  This function provides a similar interface, but allowing a batch of filters,
+  a different one for each input.
+
+  In the below definitions, B is the batch size, H and W are spatial input or
+  output dimensions (overloaded between input and output), C1 is the input
+  number of channels, C2 is output number of channels, KHxKW is the
+  convolutional kernel spatial size.
+
+  Args:
+    inputs: BxHxWxC1 tensor - batch of input "images"
+    filters: BxKHxKWxC1xC2 tensor - batch of convolutional kernels
+    strides: See tf.nn.conv2d arg: strides
+    padding: See tf.nn.conv2d arg: padding
+
+  Returns:
+    Tensor of shape BxHxWxC2
+  """
+  batch_size = inputs.shape[0]
+
+  output_slices = [tf.nn.conv2d(inputs[i:i+1], filters[i], strides, padding)
+                   for i in range(batch_size)]
+  output = tf.stack(output_slices, axis=0)
+  # Each output slice has a batch dimension of size 1. Get rid of it.
+  assert output.shape[1] == 1, 'Each slice should have batch size of 1'
+  output = output[:, 0, :, :, :]
+  # Output should have same batch size and spatial dimensions as input, but
+  # the number of channels is determined by the convolution filter
+  assert_shape((batch_size, inputs.shape[1], inputs.shape[2], filters.shape[4]),
+               output.shape)
+  return output
+
+
+def assert_shape(expected_shape, actual_shape):
+  """Asserts that the shapes are equal, printing a useful message otherwise."""
+  assert expected_shape == actual_shape, (
+      'Shape mismatch. Expected: {}. Found: {}'.format(
+          expected_shape, actual_shape))
+
+
 class WallTimer(object):
   """Collect the duration of an operation using Python's 'with' statement."""
 

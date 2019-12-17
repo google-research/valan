@@ -44,7 +44,8 @@ class EnvTest(tf.test.TestCase):
 
     self._env_config = hparam.HParams(
         problem='R2R',
-        base_path=self.data_dir,
+        scan_base_dir=self.data_dir,
+        data_base_dir=self.data_dir,
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
@@ -56,7 +57,7 @@ class EnvTest(tf.test.TestCase):
     self._runtime_config = common.RuntimeConfig(task_id=0, num_tasks=1)
 
     self._env = env.R2REnv(
-        data_sources=['small_split'],
+        data_sources=['R2R_small_split'],
         runtime_config=self._runtime_config,
         env_config=self._env_config)
 

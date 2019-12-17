@@ -22,7 +22,8 @@ from valan.r2r import constants
 
 DEFAULT_ENV_CONFIG = {
     'problem': 'R2R',
-    'base_path': '',
+    'scan_base_dir': '',  # Base dir for scan data, eg., `scans`, `connections`.
+    'data_base_dir': '',  # Base dir for input JSON and vocab files.
     'vocab_file': 'trainval_vocab.txt',
     'images_per_pano': 36,
     'max_conns': 14,

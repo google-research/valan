@@ -57,8 +57,8 @@ class R2REnv(base_env.BaseEnv):
     """Initializes an instance of R2REnv.
 
     Args:
-      data_sources: A list of strings. The paths from 'R2R_{}.json'.format(
-        source) are cached for each of the source in data_sources.
+      data_sources: A list of strings, e.g., `R2R_train`. The paths from
+        '{}.json'.format(source) are cached for each source in data_sources.
       runtime_config: An instance of `common.RuntimeConfig`.
       env_config: Optional. If None, defaults to config specified in
         lookfar/r2r/env_config.py.
@@ -70,7 +70,7 @@ class R2REnv(base_env.BaseEnv):
 
     all_paths = _get_all_paths(
         data_sources=data_sources,
-        base_path=env_config.base_path,
+        data_base_dir=env_config.data_base_dir,  # Problem specific path.
         vocab_file=env_config.vocab_file,
         fixed_instruction_len=env_config.instruction_len)
 
@@ -395,10 +395,10 @@ def _get_scan_info(env_config, scan_name, stop_node_id, default_conn_id):
   Returns:
     An object of `ScanInfo`.
   """
-  house_file = os.path.join(env_config.base_path, 'scans', scan_name,
+  house_file = os.path.join(env_config.scan_base_dir, 'scans', scan_name,
                             'house_segmentations', '{}.house'.format(scan_name))
   house_info = house_parser.R2RHouseParser(house_file)
-  connections_file = os.path.join(env_config.base_path, 'connections',
+  connections_file = os.path.join(env_config.scan_base_dir, 'connections',
                                   '{}_connectivity.json'.format(scan_name))
   house_graph = house_info.get_panos_graph(connections_file, True)
 
@@ -482,13 +482,14 @@ def _get_image_features(filename):
   return parsed_record
 
 
-def _get_all_paths(data_sources, base_path, vocab_file,
+def _get_all_paths(data_sources, data_base_dir, vocab_file,
                    fixed_instruction_len):
   """Returns list of all paths from the given `data_sources`."""
-  vocab_filepath = os.path.join(base_path, vocab_file)
+  vocab_filepath = os.path.join(data_base_dir, vocab_file)
   vocab = load_vocab(vocab_filepath)
+  # Problem specific files, e.g., R2R_train.json, R2R_val_seen.json.
   filenames = [
-      os.path.join(base_path, 'R2R_{}.json'.format(source))
+      os.path.join(data_base_dir, '{}.json'.format(source))
       for source in data_sources
   ]
   processed_paths = []
