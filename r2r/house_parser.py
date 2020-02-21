@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import csv
 import json
 import math
 import os
@@ -31,8 +32,9 @@ from valan.r2r import house_utils
 
 _BANNED_MP40_CAT_INDEX = {0, 40, 41}
 # Note: `oriented_bbox` is another namedtuple of ('axis0', 'axis1', 'radii')
-RoomObject = collections.namedtuple(
-    'RoomObject', ['center', 'distance', 'name', 'category', 'oriented_bbox'])
+RoomObject = collections.namedtuple('RoomObject', [
+    'center', 'distance', 'name', 'category', 'clean_category', 'oriented_bbox'
+])
 
 
 class Region(object):
@@ -145,16 +147,53 @@ class Category(object):
   MPCAT_INDEX_LOC = 4        # Location of mpcat index.
   MPCAT_NAME_LOC = 5         # Location of mpcat name.
 
-  def __init__(self, category_line):
+  def __init__(self, category_line, category_map=None):
+    """Extract object index and category name for a line in the .house file."""
     parts = category_line.strip().split()
     assert 'C' == parts[0]
     assert self.NUM_TOKENS == len(parts)
     self.index = int(parts[self.INDEX_LOC])
     self.category_mapping_index = int(parts[self.CAT_MAP_INDEX_LOC])
+    # Raw category name
     self.category_mapping_name = ' '.join(
         parts[self.CAT_MAP_NAME_LOC].split('#'))
     self.mpcat40_index = int(parts[self.MPCAT_INDEX_LOC])
     self.mpcat40_name = parts[self.MPCAT_NAME_LOC]
+    # Cleaned category name
+    if category_map:
+      self.clean_category_name = self._get_clean_cat_name(
+          self.category_mapping_index, category_map)
+
+  def _get_clean_cat_name(self,
+                          category_index,
+                          category_map,
+                          count_cutoff_threshold=5):
+    """Map category index to a clean category name instead of raw categeory.
+
+    The clean categories are from the R2R `category_mapping.tsv` file. It
+    corrects typos and standardizes the raw categories, which is much more fine
+    grained than the mpcat40 categories (which only has 40 categories).
+    For more information see:
+    https://github.com/niessner/Matterport/blob/master/metadata/category_mapping.tsv
+
+    Args:
+      category_index: int; the category mapping index extracted from the
+        category line from the .house file.
+      category_map: a dict returned by `_load_cat_map()`, containing mappings
+        from category index to category names, mpcat40 name, and count.
+      count_cutoff_threshold: categories with counts below the threshold are
+        replaced with their corresponding mpcat40 names. This is used to
+        truncate the long tail of rarely used category names.
+
+    Returns:
+      A unicode string for the clean category name.
+    """
+    cat_map = category_map[category_index]
+    if cat_map['count'] >= count_cutoff_threshold:
+      clean_name = cat_map['clean_category']
+    else:
+      clean_name = cat_map['mpcat40']
+    return clean_name
 
 
 class Object(object):
@@ -205,7 +244,11 @@ class Object(object):
 class R2RHouseParser(object):
   """Parser to extract various annotations in a house to assist perception."""
 
-  def __init__(self, house_file_path):
+  def __init__(self,
+               house_file_path,
+               category_map_dir=None,
+               category_map_file='category_mapping.tsv',
+               banned_mp40_cat_index=None):
     """Parses regions, panos, categories and objects from house spec file.
 
     For more information see:
@@ -213,7 +256,30 @@ class R2RHouseParser(object):
 
     Args:
       house_file_path: Path to scan id house specification file.
+      category_map_dir: Dir of category mapping file 'category_mapping.tsv'.
+        If not provided, then the `clean_category` will be omitted.
+      category_map_file: str; file name for the category mapping table. Use
+        default unless the mapping table is different.
+      banned_mp40_cat_index: A set of mpcat40 category indices, e.g., {0, 41}
+        for (void, unlabled). If provided, then these categories will be ignored
+        when extracting objects of each pano.
     """
+    # Load category map and banned mp40 categories.
+    if category_map_dir:
+      assert tf.io.gfile.isdir(
+          category_map_dir), '{} must be an existing dir.'.format(
+              category_map_dir)
+      category_map = _load_cat_map(
+          category_map_file, category_map_dir, delimiter='\t')
+    else:
+      # Default to None and omit `clean_category_name` if dir is not given.
+      category_map = None
+
+    if not banned_mp40_cat_index:
+      self.banned_mp40_cat_index = _BANNED_MP40_CAT_INDEX
+    else:
+      self.banned_mp40_cat_index = banned_mp40_cat_index
+
     self.scan_id = os.path.splitext(os.path.basename(house_file_path))[0]
     with tf.io.gfile.GFile(house_file_path, 'r') as input_file:
       # Skip but check header line.
@@ -240,7 +306,7 @@ class R2RHouseParser(object):
           assert p.index not in self.panos
           self.panos[p.index] = p
         elif line[0] == 'C':
-          c = Category(line)
+          c = Category(line, category_map)
           assert c.index not in self.categories
           self.categories[c.index] = c
         elif line[0] == 'O':
@@ -279,7 +345,7 @@ class R2RHouseParser(object):
     """Extract the set of objects given a pano.
 
     Only returns the closest object of the same mp40 category and skips any
-    objects with mp40 category in _BANNED_MP40_CAT_INDEX (e.g. misc,
+    objects with mp40 category in `self.banned_mp40_cat_index` (e.g. misc,
     void, unlabeled categories).
 
     Args:
@@ -293,7 +359,7 @@ class R2RHouseParser(object):
       object along each axis.
     """
     pano_id = self.pano_name_map.get(pano_name, None)
-    if not pano_id:
+    if pano_id is None:  # Note that `pano_id` is int and thus can be 0.
 
       return {}
 
@@ -303,13 +369,19 @@ class R2RHouseParser(object):
     for object_index in self.region_object_map[region_index]:
       try:
         category = self.categories[self.objects[object_index].category_index]
-        if category.mpcat40_index not in _BANNED_MP40_CAT_INDEX:
+        # NOTE: 'unknown' objects are sometimes labeled as mpcat40=40 (misc)
+        # instead of mpcat40=41 (unlabeled). So we specifically exclude it here.
+        if ('unknown' not in category.category_mapping_name.lower()) and (
+            category.mpcat40_index not in self.banned_mp40_cat_index):
           object_center = self.objects[object_index].center
           assert object_center not in room_objects, self.objects[object_index]
           room_objects[object_center] = RoomObject(
               object_center,
               np.linalg.norm(np.array(object_center) - np.array(pano_center)),
-              category.category_mapping_name, category.mpcat40_name,
+              category.category_mapping_name,
+              category.mpcat40_name,
+              (category.clean_category_name if hasattr(
+                  category, 'clean_category_name') else None),
               self.objects[object_index].obbox)
       except KeyError:
         # Note that this happens because some objects have been marked with -1
@@ -388,3 +460,45 @@ class R2RHouseParser(object):
       graph.nodes[node].coords = self.get_pano_by_name(node).center
 
     return graph
+
+
+def _load_cat_map(category_map_file='category_mapping.tsv',
+                  file_dir='',
+                  delimiter='\t'):
+  """Load category mapping table from file.
+
+  The mapping table is available at:
+  https://github.com/niessner/Matterport/blob/master/metadata/category_mapping.tsv
+
+  Args:
+    category_map_file: str; category mapping table file.
+    file_dir: str; the dir to `category_map_file`.
+    delimiter: str; optional delimiter for the input table.
+
+  Returns:
+    A dict that maps category index to category names and counts.
+  """
+  filepath = os.path.join(file_dir, category_map_file)
+  assert tf.io.gfile.exists(filepath), (
+      'Missing category mapping file: {}'.format(filepath))
+  data = {}
+  with tf.io.gfile.GFile(filepath, 'r') as f:
+    reader = csv.reader(f, delimiter=delimiter)
+    for i, row in enumerate(reader):
+      assert len(row) == 18, 'Num columns must be 18.'
+      if i == 0:
+        header = row
+        assert header[0:4] == ['index', 'raw_category', 'category', 'count']
+        assert header[-2:] == ['mpcat40index', 'mpcat40']
+      else:
+        entries = [r.lower() for r in row]
+        # entries[0] is the index of each line.
+        data[int(entries[0])] = {
+            'raw_category': entries[1],
+            'clean_category':  # Only take the first part if has '\' in name.
+                entries[2].split('/')[0].strip(),
+            'count': int(entries[3]),
+            'mpcat40index': int(entries[-2]),
+            'mpcat40': entries[-1],
+        }
+  return data

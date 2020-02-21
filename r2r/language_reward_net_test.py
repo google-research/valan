@@ -33,7 +33,6 @@ class LanguageRewardNetTest(tf.test.TestCase):
 
   def setUp(self):
     super(LanguageRewardNetTest, self).setUp()
-    tf.enable_v2_behavior()
     self.reward_net = language_reward_net.LanguageRewardNet(100, 2)
     self.instruction_encoder = self.reward_net._instruction_encoder
     self.image_encoder = self.reward_net._image_encoder

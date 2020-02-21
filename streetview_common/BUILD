@@ -20,6 +20,15 @@ py_library(
 )
 
 py_library(
+    name = "tf_image_processor",
+    srcs = ["tf_image_processor.py"],
+    deps = [
+        "//tensorflow:tensorflow_py",
+        "//third_party/py/tensorflow_hub",
+    ],
+)
+
+py_library(
     name = "streetview_env",
     srcs = ["streetview_env.py"],
     deps = [
@@ -55,6 +64,20 @@ py_library(
         "//tensorflow:tensorflow_py",
         "//third_party/py/valan/framework:base_agent",
         "//third_party/py/valan/framework:common",
+        "@absl_py//absl/logging",
+    ],
+)
+
+pytype_strict_library(
+    name = "streetview_feature_extraction",
+    srcs = ["streetview_feature_extraction.py"],
+    deps = [
+        ":tf_image_processor",
+        "//pyglib:gfile",
+        "//tensorflow:tensorflow_py",
+        "//third_party/py/PIL:pil",
+        "//third_party/py/nfov",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "@absl_py//absl/logging",
     ],
 )

@@ -24,7 +24,7 @@ from __future__ import google_type_annotations
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from valan.framework import utils
 from valan.streetview_common import streetview_constants
 

@@ -1,10 +1,29 @@
 # VALAN: Vision and Language Agent Navigation
 # Framework libraries and tests
 
+load("//tools/build_defs/proto/cpp:cc_proto_library.bzl", "cc_proto_library")
+
 licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "image_features_proto",
+    srcs = ["image_features.proto"],
+    cc_api_version = 2,
+)
+
+py_proto_library(
+    name = "image_features_py_pb2",
+    api_version = 2,
+    deps = [":image_features_proto"],
+)
+
+cc_proto_library(
+    name = "image_features_cc_proto",
+    deps = [":image_features_proto"],
 )
 
 py_library(

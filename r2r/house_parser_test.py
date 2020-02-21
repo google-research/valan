@@ -21,6 +21,7 @@ from __future__ import print_function
 import os
 
 from absl import flags
+from absl.testing import parameterized
 import tensorflow.compat.v2 as tf
 
 from valan.r2r import house_parser
@@ -43,7 +44,8 @@ class R2RHouseParserTest(tf.test.TestCase):
 
     # The parser performs many assertion tests to ensure file is not malformed
     # or there are no colliding indices for annotations in the same category.
-    self.house = house_parser.R2RHouseParser(house_file_path)
+    self.house = house_parser.R2RHouseParser(
+        house_file_path, category_map_dir=base_dir)
 
   def test_parser(self):
     self.assertEqual(37, self.house.num_regions)
@@ -280,6 +282,53 @@ class R2RHouseParserTest(tf.test.TestCase):
 
     for excluded_pano in expected_excluded_panos:
       self.assertNotIn(excluded_pano, graph.nodes)
+
+
+class CategoryTest(tf.test.TestCase, parameterized.TestCase):
+
+  def setUp(self):
+    super(CategoryTest, self).setUp()
+    self.base_dir = FLAGS.test_srcdir + (
+        'valan/r2r/testdata/')
+    self.banned_mp40_cat_index = {0, 41}
+    self.cat_map = house_parser._load_cat_map(
+        category_map_file='category_mapping.tsv', file_dir=self.base_dir)
+
+  def test_load_cat_map(self):
+    """Test loaded category mappings."""
+    self.assertCountEqual(
+        self.cat_map[1].values(),
+        ['wall', 'wall', 7667, 1, 'wall'])
+    self.assertCountEqual(
+        self.cat_map[100].values(),
+        ['skylight', 'skylight', 57, 9, 'window'])
+    self.assertCountEqual(
+        self.cat_map[500].values(),
+        ['lights', 'light', 3, 28, 'lighting'])
+    self.assertCountEqual(
+        self.cat_map[1659].values(),
+        ['washbasin top', 'washbasin', 1, 15, 'sink'])
+
+  @parameterized.named_parameters(
+      ('case1', 'C  116  117 drawer  13 chest_of_drawers  0 0 0 0 0', 'drawer'),
+      ('case2', 'C  117  118 bathroom#countertop#object  39 objects  0 0 0 0 0',
+       'object'),
+      ('case3', 'C  118  119 washing#machine  37 appliances  0 0 0 0 0',
+       'washing machine'),
+      ('case4', 'C  119  120 shower#curtain  12 curtain  0 0 0 0 0',
+       'shower curtain'),
+      ('case5', 'C  146  147 decorative#object  39 objects  0 0 0 0 0',
+       'decoration'))
+  def test_category(self, line, expected_clean_cat_name):
+    expected = line.split()
+    category = house_parser.Category(line, self.cat_map)
+    self.assertEqual(category.index, int(expected[1]))
+    self.assertEqual(category.category_mapping_index, int(expected[2]))
+    self.assertEqual(
+        category.category_mapping_name, expected[3].replace('#', ' '))
+    self.assertEqual(category.mpcat40_index, int(expected[4]))
+    self.assertEqual(category.mpcat40_name, expected[5])
+    self.assertEqual(category.clean_category_name, expected_clean_cat_name)
 
 
 if __name__ == '__main__':

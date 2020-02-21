@@ -96,7 +96,7 @@ class CurriculumEnvTest(env_test.EnvTest):
 
       # Key function takes one input and converts it to the key.
       self._env = curriculum_env.CurriculumR2REnv(
-          data_sources=['small_split'],
+          data_sources=['R2R_small_split'],
           runtime_config=self._runtime_config,
           curriculum_env_config=config)
       # Compare function takes two inputs and determine their relationship.
@@ -111,7 +111,7 @@ class CurriculumEnvTest(env_test.EnvTest):
     config = curriculum_env_config_lib.get_default_curriculum_env_config(
         'constant-1-1', self._env_config)
     self._env = curriculum_env.CurriculumR2REnv(
-        data_sources=['small_split'],
+        data_sources=['R2R_small_split'],
         runtime_config=self._runtime_config,
         curriculum_env_config=config)
 
@@ -133,7 +133,7 @@ class CurriculumEnvTest(env_test.EnvTest):
     config = curriculum_env_config_lib.get_default_curriculum_env_config(
         'constant-1-1.5', self._env_config)
     self._env = curriculum_env.CurriculumR2REnv(
-        data_sources=['small_split'],
+        data_sources=['R2R_small_split'],
         runtime_config=self._runtime_config,
         curriculum_env_config=config)
     self.assertLen(self._env._paths, 1)
@@ -152,7 +152,7 @@ class CurriculumEnvTest(env_test.EnvTest):
     config = curriculum_env_config_lib.get_default_curriculum_env_config(
         'adaptive-1-4', self._env_config)
     self._env = curriculum_env.CurriculumR2REnv(
-        data_sources=['small_split'],
+        data_sources=['R2R_small_split'],
         runtime_config=self._runtime_config,
         curriculum_env_config=config)
     self.assertLen(self._env._paths, 1)

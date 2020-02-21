@@ -29,11 +29,11 @@ import numpy as np
 import tensorflow.compat.v2 as tf
 from valan.framework import base_env
 from valan.framework import common
+from valan.framework import image_features_pb2
 
 from valan.r2r import constants
 from valan.r2r import env_config as default_env_config
 from valan.r2r import house_parser
-from valan.r2r import image_features_pb2
 
 INF = 1e9
 

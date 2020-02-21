@@ -35,9 +35,10 @@ import numpy as np
 
 import tensorflow.compat.v2 as tf
 
+from valan.framework import image_features_pb2
+
 from valan.r2r import general_utils
 from valan.r2r import image_encoder
-from valan.r2r import image_features_pb2
 from valan.r2r import instruction_encoder
 
 FLAGS = flags.FLAGS

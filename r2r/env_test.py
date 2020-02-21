@@ -25,11 +25,11 @@ import numpy as np
 import tensorflow.compat.v2 as tf
 from valan.framework import common
 from valan.framework import hparam
+from valan.framework import image_features_pb2
 
 from valan.r2r import constants
 from valan.r2r import env
 from valan.r2r import env_config
-from valan.r2r import image_features_pb2
 
 FLAGS = flags.FLAGS
 
@@ -38,7 +38,6 @@ class EnvTest(tf.test.TestCase):
 
   def setUp(self):
     super(EnvTest, self).setUp()
-    tf.enable_v2_behavior()
     self.data_dir = FLAGS.test_srcdir + (
         'valan/r2r/testdata')
 

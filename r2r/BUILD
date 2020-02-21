@@ -1,7 +1,6 @@
 # Code for R2R based on Matterport3D environment.
 
 load("//devtools/python/blaze:python3.bzl", "py2and3_strict_test")
-load("//tools/build_defs/proto/cpp:cc_proto_library.bzl", "cc_proto_library")
 load("//devtools/python/blaze:pytype.bzl", "pytype_strict_library")
 
 licenses(["notice"])
@@ -15,19 +14,18 @@ pytype_strict_library(
     srcs = ["language_reward_net.py"],
     srcs_version = "PY2AND3",
     deps = [
-        #":constants",
         ":general_utils",
         ":image_encoder",
-        ":image_features_py_pb2",
         ":instruction_encoder",
         "//pyglib:gfile",
-        "//third_party/py/absl:app",
-        "@absl_py//absl/flags",
-        "@absl_py//absl/logging",
         "//tensorflow:tensorflow_py",
+        "//third_party/py/absl:app",
         "//third_party/py/tensorflow_probability",
         "//third_party/py/valan/framework:base_agent",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "//third_party/py/valan/framework:utils",
+        "@absl_py//absl/flags",
+        "@absl_py//absl/logging",
     ],
 )
 
@@ -51,13 +49,13 @@ py2and3_strict_test(
         ":env",
         ":env_config",
         ":general_utils",
-        ":image_features_py_pb2",
         ":language_reward_net",
         "//tensorflow:tensorflow_py",
         "//tensorflow/contrib/training:training_py",
         "//testing/pybase",
         "//third_party/py/tensorflow_probability",
         "//third_party/py/valan/framework:common",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "//third_party/py/valan/framework:utils",
         "@absl_py//absl/flags",
     ],
@@ -101,10 +99,10 @@ pytype_strict_library(
         ":constants",
         ":env_config",
         ":house_parser",
-        ":image_features_py_pb2",
         "//tensorflow:tensorflow_py",
         "//third_party/py/valan/framework:base_env",
         "//third_party/py/valan/framework:common",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "@absl_py//absl/logging",
     ],
 )
@@ -258,10 +256,10 @@ pytype_strict_library(
         ":constants",
         ":env",
         ":env_config",
-        ":image_features_py_pb2",
         "//tensorflow:tensorflow_py",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:hparam",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "@absl_py//absl/flags",
     ],
 )
@@ -298,35 +296,9 @@ pytype_strict_library(
     ],
 )
 
-proto_library(
-    name = "image_features_proto",
-    srcs = ["image_features.proto"],
-    cc_api_version = 2,
-)
-
-py_proto_library(
-    name = "image_features_py_pb2",
-    api_version = 2,
-    deps = [":image_features_proto"],
-)
-
-cc_proto_library(
-    name = "image_features_cc_proto",
-    deps = [":image_features_proto"],
-)
-
 filegroup(
     name = "test_data",
-    srcs = glob(["testdata/image_features/*"]) + [
-        "testdata/R2R_small_split.json",
-        "testdata/vocab.txt",
-        "testdata/connections/gZ6f7yhEvPG_connectivity.json",
-        "testdata/connections/p5wJjkQkbXX_connectivity.json",
-        "testdata/scans/p5wJjkQkbXX/house_segmentations/p5wJjkQkbXX.house",
-        "testdata/scans/gZ6f7yhEvPG/house_segmentations/gZ6f7yhEvPG.house",
-        "testdata/NDH/small_split.json",
-        "testdata/NDH/vocab.txt",
-    ],
+    srcs = glob(["testdata/**"]),
 )
 
 py2and3_strict_test(
@@ -387,10 +359,10 @@ py2and3_strict_test(
         ":constants",
         ":env",
         ":env_config",
-        ":image_features_py_pb2",
         "//tensorflow:tensorflow_py",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:hparam",
+        "//third_party/py/valan/framework:image_features_py_pb2",
         "@absl_py//absl/flags",
     ],
 )
@@ -436,6 +408,7 @@ py2and3_strict_test(
         ":house_utils",
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/flags",
+        "@absl_py//absl/testing:parameterized",
     ],
 )
 
