@@ -226,6 +226,10 @@ def run_with_address(
             actor_action=actor_action,
             num_steps=iterations)
       grads = tape.gradient(loss, agent.trainable_variables)
+      if FLAGS.gradient_clip_norm > 0.:
+        for i, g in enumerate(grads):
+          if g is not None:
+            grads[i] = tf.clip_by_norm(g, FLAGS.gradient_clip_norm)
       grad_norms = {}
       for var, grad in zip(agent.trainable_variables, grads):
         # For parameters which are initialized but not used for loss

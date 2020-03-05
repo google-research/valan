@@ -59,7 +59,7 @@ class NDHEnv(env.R2REnv):
 
     all_paths = _get_all_paths_ndh(
         data_sources=data_sources,
-        problem_path=env_config.problem_path,
+        data_base_dir=env_config.data_base_dir,
         vocab_file=env_config.vocab_file,
         fixed_instruction_len=env_config.instruction_len,
         history=env_config.history,
@@ -135,13 +135,13 @@ def _get_default_env_config():
   return default_env_config.get_ndh_env_config()
 
 
-def _get_all_paths_ndh(data_sources, problem_path, vocab_file,
+def _get_all_paths_ndh(data_sources, data_base_dir, vocab_file,
                        fixed_instruction_len, history, path_type):
   """Returns list of all paths from the given `data_sources`."""
-  vocab_filepath = os.path.join(problem_path, vocab_file)
+  vocab_filepath = os.path.join(data_base_dir, vocab_file)
   vocab = env.load_vocab(vocab_filepath)
   filenames = [
-      os.path.join(problem_path, '{}.json'.format(source))
+      os.path.join(data_base_dir, '{}.json'.format(source))
       for source in data_sources
   ]
   processed_paths = []
@@ -197,11 +197,17 @@ def _get_all_paths_ndh(data_sources, problem_path, vocab_file,
           e['path'] = e['player_path'][:]  # trust the player.
         else:
           e['path'] = e['planner_path'][:]  # trust the planner.
+      elif not path_type:
+        # No path is available (except starting pano) in test dataset.
+        e['path'] = [e['start_pano']['pano']]
+        # end_panos doesn't matter as we don't compute reward.
+        e['end_panos'] = [e['start_pano']['pano']]
       else:
         e['path'] = e[path_type]
       # comparable to the R2R simulator
       e['path_id'] = e['inst_idx']
       e['heading'] = e['start_pano']['heading']
+      e['problem_type'] = constants.PROBLEM_NDH
 
       processed_paths.append(e)
   return processed_paths

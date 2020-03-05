@@ -41,6 +41,7 @@ GOAL_ROOM_PANOS = 'goal_room_pano_ids'  # only for NDH task
 LABEL = 'label'
 IS_START = 'is_start'
 DISC_MASK = 'disc_mask'
+PROBLEM_TYPE = 'problem_type'
 
 # reward types
 REWARD_DISTANCE_TO_ROOM = 'distance_to_room'
@@ -59,6 +60,10 @@ STOP_NODE_ID = 0
 STOP_NODE_NAME = 'STOP_NODE'
 INVALID_NODE_ID = -1
 INVALID_NODE_NAME = 'INVALID_NODE'
+
+# Problem Types
+PROBLEM_VLN = 0
+PROBLEM_NDH = 1
 
 # Other constants
 PAD_TOKEN = '<PAD>'

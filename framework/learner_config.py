@@ -44,3 +44,7 @@ flags.DEFINE_enum('reward_clipping', '', ['', 'abs_one', 'soft_asymmetric'],
 flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate.')
 flags.DEFINE_float('lr_decay_rate', 1., 'decay rate for learning rate.')
 flags.DEFINE_float('lr_decay_steps', 0., 'decay steps for learning rate.')
+flags.DEFINE_float(
+    'gradient_clip_norm', 0.,
+    'Caps gradients to this value before applying to variables.')
+

@@ -48,8 +48,7 @@ class NDHEnvTest(tf.test.TestCase):
         path_type='trusted_path',
         max_goal_room_panos=4,
         scan_base_dir=self.data_dir,
-        data_base_dir=self.data_dir,
-        problem_path=os.path.join(self.data_dir, 'NDH'),
+        data_base_dir=os.path.join(self.data_dir, 'NDH'),
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
@@ -80,8 +79,7 @@ class NDHEnvTest(tf.test.TestCase):
         path_type='trusted_path',
         max_goal_room_panos=4,
         scan_base_dir=self.data_dir,
-        data_base_dir=self.data_dir,
-        problem_path=os.path.join(self.data_dir, 'NDH'),
+        data_base_dir=os.path.join(self.data_dir, 'NDH'),
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
@@ -154,7 +152,7 @@ class NDHEnvTest(tf.test.TestCase):
     def _get_all_paths(history):
       return env_ndh._get_all_paths_ndh(
           data_sources=['small_split'],
-          problem_path=os.path.join(self.data_dir, 'NDH'),
+          data_base_dir=os.path.join(self.data_dir, 'NDH'),
           vocab_file='vocab.txt',
           fixed_instruction_len=50,
           history=history,

@@ -20,20 +20,18 @@ from valan.r2r import constants
 from valan.r2r import env_config as env_config_lib
 
 NDH_ENV_CONFIG = {
-    'problem':
-        'NDH',
     'history':  # none | target | oracle_ans | nav_q_oracle_ans | all
         'oracle_ans',
     'path_type':
         'trusted_path',  # trusted_path | planner_path | player_path
     'max_goal_room_panos':
         35,  # must be larger than the largest number in the dataset (34)
-    'base_path':
+    'data_base_dir':
+        '',
+    'scan_base_dir':  # Base dir for scan data, e.g., 'scans/', 'connections/'.
         '',
     # keep the task-specific data separate from the simulator data
     # making it more scalable
-    'problem_path':
-        '',
     'vocab_file':
         'trainval_vocab.txt',
     'images_per_pano':

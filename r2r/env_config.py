@@ -21,7 +21,6 @@ from valan.framework import hparam
 from valan.r2r import constants
 
 DEFAULT_ENV_CONFIG = {
-    'problem': 'R2R',
     'scan_base_dir': '',  # Base dir for scan data, eg., `scans`, `connections`.
     'data_base_dir': '',  # Base dir for input JSON and vocab files.
     'vocab_file': 'trainval_vocab.txt',

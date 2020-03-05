@@ -83,6 +83,8 @@ class R2REnv(base_env.BaseEnv):
     all_scan_ids = [i for i in range(len(all_scans))]
     start_scan_idx = runtime_config.task_id % len(all_scans)
     my_scan_names = all_scans[start_scan_idx::runtime_config.num_tasks]
+    logging.info('Total Scans: %d, %s. My Scans: %d, %s.', len(all_scans),
+                 all_scans, len(my_scan_names), my_scan_names)
     my_scan_ids = all_scan_ids[start_scan_idx::runtime_config.num_tasks]
     my_scans = {name: idx for name, idx in zip(my_scan_names, my_scan_ids)}
 
@@ -500,6 +502,7 @@ def _get_all_paths(data_sources, data_base_dir, vocab_file,
         e = copy.copy(entry)
         e['instruction_token_ids'], e['instruction_len'] = get_token_ids(
             ins, fixed_instruction_len, vocab)
+        e['problem_type'] = constants.PROBLEM_VLN
         processed_paths.append(e)
   return processed_paths
 
