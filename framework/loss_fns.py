@@ -25,6 +25,7 @@ from valan.framework import common
 from valan.framework import learner_config  
 from valan.framework import utils
 from valan.framework import vtrace
+from valan.framework.focal_loss import focal_loss_from_logits
 
 from tensorflow.contrib import rnn
 
@@ -167,9 +168,10 @@ def get_cross_entropy_loss(learner_agent_output, env_output, actor_agent_output,
   return cross_entropy
 
 
-def get_discriminator_loss(learner_agent_output, env_output, actor_agent_output,
-                           actor_action, reward_clipping, discounting,
-                           baseline_cost, entropy_cost, num_steps):
+def _get_discriminator_logits(learner_agent_output, env_output,
+                              actor_agent_output, actor_action, reward_clipping,
+                              discounting, baseline_cost, entropy_cost,
+                              num_steps):
   """Discriminator loss."""
   del actor_agent_output
   del actor_action
@@ -179,13 +181,19 @@ def get_discriminator_loss(learner_agent_output, env_output, actor_agent_output,
   del entropy_cost
 
   first_true = utils.get_first_true_column(env_output.observation['disc_mask'])
+  # Shape of output_logits:[time, batch].
   output_logits = learner_agent_output.policy_logits
-  output_logits = tf.squeeze(output_logits, axis=1)
+  # Shape of output_logits:[batch].
   output_logits = tf.boolean_mask(output_logits, first_true)
   output_affine_a, output_affine_b = learner_agent_output.baseline
 
   # Get the first true.
   labels = tf.cast(env_output.observation['label'], tf.float32)
+  tf.summary.scalar(
+      'labels/mean_labels before masking',
+      tf.reduce_mean(labels),
+      step=num_steps)
+  # Shape of labels:[batch].
   labels = tf.boolean_mask(labels, first_true)
 
   positive_label = tf.equal(labels, tf.constant(1.0))
@@ -205,27 +213,125 @@ def get_discriminator_loss(learner_agent_output, env_output, actor_agent_output,
       step=num_steps)
   tf.summary.histogram(
       'distribution/negative_logits', negative_logits, step=num_steps)
-
   tf.summary.scalar(
-      'labels/positive_label',
+      'labels/positive_label_ratio',
       tf.reduce_mean(tf.cast(positive_label, tf.float32)),
       step=num_steps)
-
-  tf.summary.scalar('labels/labels', tf.reduce_mean(labels), step=num_steps)
   tf.summary.scalar(
       'affine_transform/a', tf.reduce_mean(output_affine_a), step=num_steps)
   tf.summary.scalar(
       'affine_transform/b', tf.reduce_mean(output_affine_b), step=num_steps)
+  # Shape: [batch]
+  return labels, output_logits
 
+
+def get_discriminator_loss(learner_agent_output, env_output, actor_agent_output,
+                           actor_action, reward_clipping, discounting,
+                           baseline_cost, entropy_cost, num_steps):
+  """Discriminator loss."""
+  labels, output_logits = _get_discriminator_logits(
+      learner_agent_output, env_output, actor_agent_output, actor_action,
+      reward_clipping, discounting, baseline_cost, entropy_cost, num_steps)
   cross_entropy = tf.nn.weighted_cross_entropy_with_logits(
       labels=labels, logits=output_logits, pos_weight=5)
   return cross_entropy
+
+
+def get_discriminator_focal_loss(learner_agent_output, env_output,
+                                 actor_agent_output, actor_action,
+                                 reward_clipping, discounting, baseline_cost,
+                                 entropy_cost, num_steps):
+  """Discriminator focal loss."""
+  # Check if learner_agent_output has logits and labels prepared already,
+  # otherwise filter and prepare the logits and labels.
+  if (isinstance(learner_agent_output.policy_logits, dict) and
+      'labels' in learner_agent_output.policy_logits and
+      tf.is_tensor(learner_agent_output.baseline)):
+    # Shape: [batch]
+    labels = learner_agent_output.policy_logits['labels']
+    output_logits = learner_agent_output.baseline
+    tf.debugging.assert_equal(tf.shape(labels), tf.shape(output_logits))
+    loss_tag = 'loss/focal_loss'
+  else:
+    # labels and output_logits have shape: [batch].
+    labels, output_logits = _get_discriminator_logits(
+        learner_agent_output, env_output, actor_agent_output, actor_action,
+        reward_clipping, discounting, baseline_cost, entropy_cost, num_steps)
+    loss_tag = 'loss/focal_loss (w/ softmin_softmax)'
+
+  # Shape = [batch]
+  fl, ce = focal_loss_from_logits(
+      output_logits, labels, alpha=FLAGS.focal_loss_alpha,
+      gamma=FLAGS.focal_loss_gamma, normalizer=FLAGS.focal_loss_normalizer)
+  tf.summary.scalar(loss_tag, tf.reduce_mean(fl), step=num_steps)
+  tf.summary.scalar(
+      'loss/CE (reference only)', tf.reduce_mean(ce), step=num_steps)
+  tf.summary.scalar(
+      'labels/num_labels_per_batch', tf.size(labels), step=num_steps)
+  tf.summary.scalar(
+      'labels/mean_labels', tf.reduce_mean(labels), step=num_steps)
+  return fl
+
+
+def get_discriminator_batch_loss(learner_agent_output, env_output,
+                                 unused_actor_agent_output, unused_actor_action,
+                                 unused_reward_clipping, unused_discounting,
+                                 unused_baseline_cost,
+                                 unused_entropy_cost, num_steps):
+  """Discriminator batch softmax loss with mask."""
+  # Remove the time_step dimension for each tensor in the result.
+  learner_agent_output = tf.nest.map_structure(lambda t: tf.squeeze(t, axis=0),
+                                               learner_agent_output)
+  result = learner_agent_output.policy_logits  # dict
+
+  # Compute softmax.
+  # Use stable softmax: softmax(x) = softmax(x+c) for any constant c.
+  # Here we use constant c = max(-x).
+  # Shape of similarity and similarity_mask: [batch, batch].
+  row_max = tf.reduce_max(result['similarity'], axis=1, keepdims=True)
+  masked_row_exp = tf.exp(result['similarity'] - row_max) * tf.cast(
+      result['similarity_mask'], tf.float32)
+  summed_rows = tf.reduce_sum(masked_row_exp, axis=1)  # Shape=[batch]
+  # log(softmax_i). Shape = [batch]
+  loss_by_row = -(tf.linalg.diag_part(result['similarity']) -
+                  tf.squeeze(row_max, 1)) + tf.math.log(summed_rows)
+  loss_by_row = loss_by_row * result['labels']
+
+  col_max = tf.reduce_max(result['similarity'], axis=0, keepdims=True)
+  masked_col_exp = tf.exp(result['similarity'] - col_max) * tf.cast(
+      result['similarity_mask'], tf.float32)
+  summed_cols = tf.reduce_sum(masked_col_exp, axis=0)  # Shape=[batch]
+  tf.debugging.assert_equal(summed_cols.shape, summed_rows.shape)
+  # log(softmax_j). Shape = [batch]
+  loss_by_col = -(tf.linalg.diag_part(result['similarity']) -
+                  tf.squeeze(col_max, 0)) + tf.math.log(summed_cols)
+  loss_by_col = loss_by_col * result['labels']
+
+  # Shape = [batch]
+  loss = (loss_by_row + loss_by_col) / 2.0
+
+  tf.summary.scalar('loss/batch_softmax', tf.reduce_mean(loss), step=num_steps)
+  tf.summary.scalar('labels/num_positive_labels',
+                    tf.reduce_sum(result['labels']), step=num_steps)
+  tf.summary.scalar('labels/batch_loss_positive_label_ratio',
+                    tf.reduce_mean(result['labels']), step=num_steps)
+  # Add classification loss if set in FLAGS. Shape = [batch].
+  if FLAGS.use_batch_and_ce_losses:
+    classification_loss = get_discriminator_focal_loss(
+        learner_agent_output, env_output, unused_actor_agent_output,
+        unused_actor_action, unused_reward_clipping, unused_discounting,
+        unused_baseline_cost, unused_entropy_cost, num_steps)
+    # Shape = [batch].
+    loss = classification_loss + loss * FLAGS.disc_batch_loss_scale
+  return loss
 
 
 LOSS_FNS_REGISTRY = {
     common.AC_LOSS: get_ac_loss,
     common.CE_LOSS: get_cross_entropy_loss,
     common.DCE_LOSS: get_discriminator_loss,
+    common.DCE_FOCAL_LOSS: get_discriminator_focal_loss,
+    common.DISC_BATCH_LOSS: get_discriminator_batch_loss,
 }
 
 
@@ -265,5 +371,10 @@ def compute_loss(study_loss_types, current_batch_loss_type, agent, agent_state,
   losses_dict = tf.nest.map_structure(rnn.transpose_batch_time, losses_dict)
   loss = tf.reduce_mean(
       utils.gather_from_dict(losses_dict, current_batch_loss_type))
-  tf.summary.scalar('loss/loss', loss, step=num_steps)
-  return loss
+  # Total loss including regularizer losses.
+  regularizers_loss = tf.add_n(agent.losses)
+  total_loss = loss + regularizers_loss
+  tf.summary.scalar('loss/task_loss', loss, step=num_steps)
+  tf.summary.scalar('loss/regularizer_loss', regularizers_loss, step=num_steps)
+  tf.summary.scalar('loss/total_loss', loss, step=num_steps)
+  return total_loss

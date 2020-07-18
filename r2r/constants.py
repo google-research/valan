@@ -33,6 +33,8 @@ CONN_IDS = 'connection_ids'
 VALID_CONN_MASK = 'valid_connections_mask'
 PANO_ENC = 'pano_encoding'
 CONN_ENC = 'connection_encoding'
+PREV_ACTION_ENC = 'previous_action_encoding'
+NEXT_GOLDEN_ACTION_ENC = 'next_golden_action_encoding'
 ORACLE_NEXT_ACTION = 'oracle_next_action'
 GOAL_PANO_ID = 'goal_pano_id'
 GOLDEN_PATH = 'golden_path'
@@ -71,6 +73,7 @@ OOV_TOKEN = '<UNK>'
 
 # Tuples
 ScanInfo = collections.namedtuple('ScanInfo', [
-    'pano_name_to_id', 'pano_id_to_name', 'pano_enc', 'conn_ids', 'conn_enc',
+    'pano_name_to_id', 'pano_id_to_name', 'pano_enc', 'pano_heading',
+    'pano_pitch', 'conn_ids', 'conn_enc', 'conn_heading', 'conn_pitch',
     'graph'
 ])

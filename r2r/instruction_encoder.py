@@ -37,14 +37,34 @@ class InstructionEncoder(tf.keras.Model):
                oov_bucket_size,
                vocab_size=1082,
                word_embed_dim=300,
+               l2_scale=0.0,
+               dropout=0.0,
+               layernorm=False,
+               mode=None,
                name=None):
     super(InstructionEncoder,
           self).__init__(name=name if name else 'ins_encoder')
+    self._l2_scale = l2_scale
     self._word_embeddings = self._get_embedding_layer(pretrained_embed_path,
                                                       oov_bucket_size,
                                                       vocab_size,
                                                       word_embed_dim)
     self._bi_lstm = self._get_bi_lstm_encoder(num_hidden_layers, output_dim)
+    # Input dropout and layernorm layers.
+    self._use_layernorm = layernorm
+    self._input_dropout = tf.keras.layers.Dropout(dropout, seed=42)
+    self._input_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+    # State dropout and layernorm.
+    self._state_h_dropout = tf.keras.layers.Dropout(dropout, seed=42)
+    self._state_h_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+    self._state_c_dropout = tf.keras.layers.Dropout(dropout, seed=42)
+    self._state_c_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+    if dropout > 0.0 and not mode:
+      raise ValueError(
+          '`mode` must be set to train/eval/predict when using dropout. Got: {}'
+          .format(mode))
+    self._is_training = True if mode == 'train' else False
 
   def _get_embedding_layer(self, pretrained_embed_path, oov_buckets_size,
                            vocab_size, embed_dim):
@@ -112,7 +132,10 @@ class InstructionEncoder(tf.keras.Model):
 
       self._cells.append(
           tf.keras.layers.LSTMCell(
-              hidden_dim, name='lstm_layer_{}'.format(layer_id)))
+              hidden_dim,
+              kernel_regularizer=tf.keras.regularizers.l2(self._l2_scale),
+              recurrent_regularizer=tf.keras.regularizers.l2(self._l2_scale),
+              name='lstm_layer_{}'.format(layer_id)))
 
     self._cells_rnn = tf.keras.layers.RNN(
         self._cells, return_sequences=True, return_state=True)
@@ -136,6 +159,11 @@ class InstructionEncoder(tf.keras.Model):
     # tf.float32 [batch_size, max_seq_length, word_embedding_dim]
     embedding = self._word_embeddings(input_tensor)
 
+    # Input dropout and layernorm.
+    embedding = self._input_dropout(embedding, training=self._is_training)
+    if self._use_layernorm:
+      embedding = self._input_layernorm(embedding)
+
     # The result is a list of 2N+1 elements:
     # first element - output of all timesteps with dimension
     # [batch_size, time, hidden_dim]
@@ -157,7 +185,16 @@ class InstructionEncoder(tf.keras.Model):
       # one is c.
       state_h = tf.concat(
           [states[idx][0], states[idx + int(num_states / 2)][0]], axis=1)
+      # Add dropout and layernorm.
+      state_h = self._state_h_dropout(state_h, training=self._is_training)
+      if self._use_layernorm:
+        state_h = self._state_h_layernorm(state_h)
       state_c = tf.concat(
           [states[idx][1], states[idx + int(num_states / 2)][1]], axis=1)
+      # Add dropout and layernorm.
+      state_c = self._state_c_dropout(state_c, training=self._is_training)
+      if self._use_layernorm:
+        state_c = self._state_c_layernorm(state_c)
+
       encoder_states.append((state_h, state_c))
     return (output, encoder_states)

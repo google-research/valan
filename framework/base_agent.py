@@ -61,7 +61,7 @@ class BaseAgent(tf.keras.Model):
     """
     return self._get_initial_state(observation, batch_size)
 
-  def call(self, env_output, neck_state):
+  def call(self, env_output, initial_neck_state):
     """Runs the entire episode given time-major tensors.
 
     Args:
@@ -71,35 +71,17 @@ class BaseAgent(tf.keras.Model):
         observation - A nested structure with individual tensors that have first
           two dimensions equal to [num_timesteps, batch_size]
         info - Unused
-      neck_state: A tensor or nested structure with individual tensors that have
-        first dimension equal to batch_size and no time dimension.
+      initial_neck_state: A tensor or nested structure with individual tensors
+        that have first dimension equal to batch_size and no time dimension.
 
     Returns:
       An `AgentOutput` tuple with individual tensors that have first two
         dimensions equal to [num_timesteps, batch_size]
     """
-    unused_reward, done, observation, unused_info = env_output
-    # Add current time_step and batch_size.
-    self._current_num_timesteps = tf.shape(done)[0]
-    self._current_batch_size = tf.shape(done)[1]
+    neck_output_list, neck_state = self._unroll_neck_steps(
+        env_output, initial_neck_state)
 
-    torso_output = utils.batch_apply(self._torso, observation)
-    # shape: [num_timesteps, batch_size, ...], where the trailing dimensions are
-    # same as trailing dimensions of `neck_state`.
-    reset_state = self._get_reset_state(observation, done, neck_state)
-    neck_output_list = []
-    for timestep, d in enumerate(tf.unstack(done)):
-      neck_input = utils.get_row_nested_tensor(torso_output, timestep)
-      # If the episode ended, the neck state should be reset before the next
-      # step.
-      curr_timestep_reset_state = utils.get_row_nested_tensor(
-          reset_state, timestep)
-      neck_state = tf.nest.map_structure(
-          lambda reset_state, state: tf.compat.v1.where(d, reset_state, state),  
-          curr_timestep_reset_state, neck_state)
-      neck_output, neck_state = self._neck(neck_input, neck_state)
-      neck_output_list.append(neck_output)
-
+    # Stack all time steps together in the 0th dim for all tensors in output.
     head_input = tf.nest.map_structure(lambda *tensors: tf.stack(tensors),
                                        *neck_output_list)
     head_output = utils.batch_apply(self._head, head_input)
@@ -164,6 +146,33 @@ class BaseAgent(tf.keras.Model):
                 shape=done.shape.as_list() + t.shape.as_list()[1:],
                 dtype=t.dtype),
             default_state))
+
+  def _unroll_neck_steps(self, env_output, initial_state):
+    """Unrolls all timesteps and returns a list of outputs and a final state."""
+    unused_reward, done, observation, unused_info = env_output
+    # Add current time_step and batch_size.
+    self._current_num_timesteps = tf.shape(done)[0]
+    self._current_batch_size = tf.shape(done)[1]
+
+    torso_output = utils.batch_apply(self._torso, observation)
+
+    # shape: [num_timesteps, batch_size, ...], where the trailing dimensions are
+    # same as trailing dimensions of `neck_state`.
+    neck_state = initial_state
+    reset_state = self._get_reset_state(observation, done, neck_state)
+    neck_output_list = []
+    for timestep, d in enumerate(tf.unstack(done)):
+      neck_input = utils.get_row_nested_tensor(torso_output, timestep)
+      # If the episode ended, the neck state should be reset before the next
+      # step.
+      curr_timestep_reset_state = utils.get_row_nested_tensor(
+          reset_state, timestep)
+      neck_state = tf.nest.map_structure(
+          lambda reset_state, state: tf.compat.v1.where(d, reset_state, state),  
+          curr_timestep_reset_state, neck_state)
+      neck_output, neck_state = self._neck(neck_input, neck_state)
+      neck_output_list.append(neck_output)
+    return neck_output_list, neck_state
 
   @abc.abstractmethod
   def _get_initial_state(self, observation, batch_size):

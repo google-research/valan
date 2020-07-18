@@ -41,7 +41,7 @@ class AgentR2RTest(tf.test.TestCase):
   def setUp(self):
     super(AgentR2RTest, self).setUp()
     self.num_panos = 36
-    self.image_feature_size = 2052
+    self.image_feature_size = 64 + 256
     self.num_actions = 14
     self.time_step = 3
     self.batch_size = 1
@@ -50,6 +50,8 @@ class AgentR2RTest(tf.test.TestCase):
         reward=None,
         done=done,
         observation={
+            constants.HEADING: np.zeros([self.time_step, self.batch_size, 1]),
+            constants.PITCH: np.zeros([self.time_step, self.batch_size, 1]),
             constants.PANO_ENC:
                 tf.random.normal([
                     self.time_step, self.batch_size, self.num_panos,
@@ -60,6 +62,10 @@ class AgentR2RTest(tf.test.TestCase):
                     self.time_step, self.batch_size, self.num_actions,
                     self.image_feature_size
                 ]),
+            constants.PREV_ACTION_ENC:
+                tf.random.normal([
+                    self.time_step, self.batch_size, self.image_feature_size
+                ]),
             constants.INS_TOKEN_IDS:
                 np.array([
                     [[3, 6, 1, 0, 0]],
@@ -68,9 +74,9 @@ class AgentR2RTest(tf.test.TestCase):
                 ]),
             constants.VALID_CONN_MASK:
                 np.array([
-                    [[True] * 14],
-                    [[True] * 5 + [False] * 9],
-                    [[True] * 2 + [False] * 12],
+                    [[1.0] * 14],
+                    [[1.0] * 5 + [0.0] * 9],
+                    [[1.0] * 2 + [0.0] * 12],
                 ])
         },
         info='')
@@ -84,10 +90,12 @@ class AgentR2RTest(tf.test.TestCase):
         problem='R2R',
         scan_base_dir=self.data_dir,
         data_base_dir=self.data_dir,
+        vocab_dir=self.data_dir,
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
-        image_encoding_dim=2052,
+        image_encoding_dim=64,
+        direction_encoding_dim=256,
         image_features_dir=os.path.join(self.data_dir, 'image_features'),
         instruction_len=50,
         max_agent_actions=6,
@@ -136,11 +144,13 @@ class AgentR2RTest(tf.test.TestCase):
         max_goal_room_panos=4,
         scan_base_dir=self.data_dir,
         data_base_dir=self.data_dir,
+        vocab_dir=self.data_dir,
         problem_path=os.path.join(self.data_dir, 'NDH'),
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
-        image_encoding_dim=2052,
+        image_encoding_dim=64,
+        direction_encoding_dim=256,
         image_features_dir=os.path.join(self.data_dir, 'image_features'),
         instruction_len=50,
         max_agent_actions=6,

@@ -42,6 +42,7 @@ class MTEnv(env.R2REnv):
         # hard-code train data sources as we use this env for train actors only.
         data_sources=['R2R_train', 'R2R_data_augmentation'],
         data_base_dir=env_config.data_base_dir,
+        vocab_dir=env_config.vocab_dir,
         vocab_file=env_config.vocab_file,
         fixed_instruction_len=env_config.instruction_len)
     ndh_paths = env_ndh._get_all_paths_ndh(  

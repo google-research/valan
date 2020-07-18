@@ -210,6 +210,25 @@ def get_first_true_column(x):
   return tf.transpose(first_true_mask, perm=[1, 0])
 
 
+def get_last_true_column(x):
+  """Gets the last True value in each col as True and all others False.
+
+  Similar to `get_first_true_column` except it is reversed.
+
+  Args:
+    x: A bool tensor with shape [num_steps, batch_size]
+
+  Returns:
+    A bool tensor of the same shape with the last True element in each col set
+      to True and every one else set to False.
+  """
+  # Reverse the row order.
+  x = tf.reverse(x, axis=[0])
+  x_first_true = get_first_true_column(x)
+  # Reverse the rows back.
+  return tf.reverse(x_first_true, axis=[0])
+
+
 def write_specs(logdir, specs):
   """Writes given specs to given location."""
   specs_path = os.path.join(logdir, 'specs')

@@ -1,6 +1,8 @@
 # VALAN: Vision and Language Agent Navigation
 # Framework libraries and tests
 
+load("//devtools/python/blaze:strict.bzl", "py_strict_test")
+load("//devtools/python/blaze:pytype.bzl", "pytype_strict_library")
 load("//tools/build_defs/proto/cpp:cc_proto_library.bzl", "cc_proto_library")
 
 licenses(["notice"])
@@ -52,6 +54,7 @@ py_library(
         ":utils",
         "//tensorflow:tensorflow_py",
         "//tensorflow/cc/seed_rl/grpc",
+        "//third_party/py/typing",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
         "@six_archive//:six",
@@ -72,6 +75,7 @@ py_library(
         "//tensorflow:tensorflow_py",
         "//tensorflow/contrib/rnn:rnn_py",
         "//tensorflow/cc/seed_rl/grpc",
+        "//third_party/py/typing",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
     ],
@@ -114,6 +118,7 @@ py_library(
     srcs = ["loss_fns.py"],
     deps = [
         ":common",
+        ":focal_loss",
         ":learner_config",
         ":utils",
         ":vtrace",
@@ -275,5 +280,38 @@ py_library(
     srcs = ["hparam.py"],
     deps = [
         "@six_archive//:six",
+    ],
+)
+
+pytype_strict_library(
+    name = "focal_loss",
+    srcs = ["focal_loss.py"],
+    srcs_version = "PY2AND3",
+    deps = ["//tensorflow:tensorflow_py"],
+)
+
+py_strict_test(
+    name = "focal_loss_test",
+    srcs = ["focal_loss_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":focal_loss",
+        "//tensorflow:tensorflow_py",
+    ],
+)
+
+py_strict_test(
+    name = "loss_fns_test",
+    srcs = ["loss_fns_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":common",
+        ":focal_loss",
+        ":learner_config",
+        ":loss_fns",
+        "//tensorflow:tensorflow_py",
+        "@absl_py//absl/flags",
     ],
 )

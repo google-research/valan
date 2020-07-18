@@ -281,7 +281,7 @@ def run_eager():
         training_loss.update_state(loss)
         return predicted_targets, target_features
 
-      predicted_targets, target_features = strategy.experimental_run_v2(
+      predicted_targets, target_features = strategy.run(
           step_fn, args=(next(iterator),))
       predicted_targets = tf.concat(
           strategy.experimental_local_results(predicted_targets), axis=0)
@@ -304,7 +304,7 @@ def run_eager():
         test_loss.update_state(loss)
         return predicted_targets, target_features
 
-      predicted_targets, target_features = strategy.experimental_run_v2(
+      predicted_targets, target_features = strategy.run(
           step_fn, args=(next(iterator),))
       predicted_targets = tf.concat(
           strategy.experimental_local_results(predicted_targets), axis=0)

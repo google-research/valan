@@ -7,5 +7,11 @@ option cc_api_version = 2;
 message ImageFeatures {
   repeated float value = 1;
   repeated string pano_id = 2;
+  // Shape should contain [num_features, feature_length].
   repeated uint32 shape = 3;
+  // num_features heading elements in radians using the R2R convention, i.e.
+  // (calculated with respect to the y-axis, increasing clockwise).
+  repeated float heading = 4;
+  // num_features pitch / elevation elements in radians.
+  repeated float pitch = 5;
 }

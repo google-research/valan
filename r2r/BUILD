@@ -2,6 +2,7 @@
 
 load("//devtools/python/blaze:python3.bzl", "py2and3_strict_test")
 load("//devtools/python/blaze:pytype.bzl", "pytype_strict_library")
+load("//devtools/python/blaze:strict.bzl", "py_strict_test")
 
 licenses(["notice"])
 
@@ -257,6 +258,7 @@ pytype_strict_library(
         ":env",
         ":env_config",
         "//tensorflow:tensorflow_py",
+        "//third_party/py/networkx",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:hparam",
         "//third_party/py/valan/framework:image_features_py_pb2",
@@ -273,9 +275,11 @@ pytype_strict_library(
         ":image_encoder",
         ":instruction_encoder",
         "//tensorflow:tensorflow_py",
+        "//third_party/py/ipdb",
         "//third_party/py/valan/framework:base_agent",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:utils",
+        "@absl_py//absl/logging",
     ],
 )
 
@@ -351,15 +355,19 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+# py2and3_strict_test(
+py_strict_test(
     name = "env_test",
     srcs = ["env_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         ":constants",
         ":env",
         ":env_config",
         "//tensorflow:tensorflow_py",
+        "//third_party/py/networkx",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:hparam",
         "//third_party/py/valan/framework:image_features_py_pb2",
@@ -412,10 +420,13 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
+    # py2and3_strict_test(
     name = "discriminator_agent_test",
     srcs = ["discriminator_agent_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
     deps = [
         ":agent_config",
         ":constants",
@@ -427,5 +438,29 @@ py2and3_strict_test(
         "//third_party/py/valan/framework:hparam",
         "//third_party/py/valan/framework:utils",
         "@absl_py//absl/flags",
+        "@absl_py//absl/testing:parameterized",
+    ],
+)
+
+py_strict_test(
+    name = "discriminator_problem_test",
+    srcs = ["discriminator_problem_test.py"],
+    data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":agent_config",
+        ":constants",
+        ":discriminator_agent",
+        ":discriminator_problem",
+        ":env",
+        ":env_config",
+        "//tensorflow:tensorflow_py",
+        "//third_party/py/ipdb",
+        "//third_party/py/valan/framework:common",
+        "//third_party/py/valan/framework:hparam",
+        "//third_party/py/valan/framework:utils",
+        "@absl_py//absl/flags",
+        "@absl_py//absl/testing:parameterized",
     ],
 )

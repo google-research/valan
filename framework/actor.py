@@ -25,13 +25,12 @@ from __future__ import google_type_annotations
 from __future__ import print_function
 
 import pickle
-
+from typing import Any, Dict, Optional, Text
 from absl import flags
 from absl import logging
 from seed_rl import grpc
 from six.moves import range
 import tensorflow.compat.v2 as tf
-from typing import Any, Dict, Optional, Text
 
 from valan.framework import actor_config  
 from valan.framework import common
@@ -194,6 +193,7 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
 
     processed_env_output = problem_type.postprocessing(
         utils.stack_nested_tensors(env_outputs))
+
     actor_output = common.ActorOutput(
         initial_agent_state=initial_agent_state,
         env_output=processed_env_output,

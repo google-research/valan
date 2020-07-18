@@ -472,3 +472,43 @@ def get_score_label(action_list, env_output_list, action_output, environment):
   # sigmoid
   return [(tf.sigmoid(action_output[0][0]),
            env_output_list[0].observation[constants.LABEL])]
+
+
+class DiscriminatorMetric(object):
+  """Eval metric for discriminator."""
+
+  def __init__(self, mode):
+    self._mode = mode
+
+  def get_score_label(self, action_list, env_output_list, action_output,
+                      environment):
+    """Gets the sigmoid probability and GT labels for DiscriminatorAgent."""
+    score_label = get_score_label(action_list, env_output_list, action_output,
+                                  environment)
+    if self._mode == 'predict':
+      instruction_ids = self._get_instruction_ids(env_output_list)
+      return [(score_label[0][0], score_label[0][1], instruction_ids)]
+    else:
+      return score_label
+
+  def get_score_label_v2(self, action_list, env_output_list, agent_output,
+                         environment):
+    """Gets the probability score and GT labels for DiscriminatorAgentV2."""
+    del action_list, environment
+    # Remove the unused timestep dimension.
+    labels = tf.squeeze(agent_output.policy_logits['labels'], axis=0)
+    logits = tf.squeeze(agent_output.baseline, axis=0)
+    if self._mode == 'predict':
+      instruction_ids = self._get_instruction_ids(env_output_list)
+      return [(tf.sigmoid(logits), labels, instruction_ids)]
+    else:
+      return [(tf.sigmoid(logits), labels)]
+
+  def _get_instruction_ids(self, env_output_list):
+    """Get instruction token ids for identification."""
+    instruction_ids = [
+        int(x)
+        for x in env_output_list[0].observation[constants.INS_TOKEN_IDS]
+        if x != 0
+    ]
+    return instruction_ids

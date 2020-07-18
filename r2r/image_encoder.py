@@ -32,6 +32,11 @@ class ImageEncoder(tf.keras.Model):
                attention_space_size,
                num_lstm_units,
                num_hidden_layers=1,
+               l2_scale=0.0,
+               dropout=0.0,
+               concat_context=False,
+               layernorm=False,
+               mode=None,
                name=None):
     super(ImageEncoder, self).__init__(name=name if name else 'image_encoder')
     # Projection layers to do attention pooling.
@@ -44,18 +49,39 @@ class ImageEncoder(tf.keras.Model):
     for layer_id in range(num_hidden_layers):
       self._cells.append(
           tf.keras.layers.LSTMCell(
-              num_lstm_units, name='lstm_layer_{}'.format(layer_id)))
+              num_lstm_units,
+              kernel_regularizer=tf.keras.regularizers.l2(l2_scale),
+              recurrent_regularizer=tf.keras.regularizers.l2(l2_scale),
+              name='lstm_layer_{}'.format(layer_id)))
     self.history_context_encoder = tf.keras.layers.StackedRNNCells(self._cells)
 
     self.attention = tf.keras.layers.Attention(use_scale=True, name='attention')
 
-  def call(self, image_features, current_lstm_state):
+    # Context dropout and layernorm layers.
+    self._use_layernorm = layernorm
+    self._context_dropout = tf.keras.layers.Dropout(dropout)
+    self._context_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+    # Projection layernorm.
+    self._hidden_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+    self._image_layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+    # If concat_context is set to True, then concat lstm_output with context.
+    self._concat_context = concat_context
+    self._dense = tf.keras.layers.Dense(num_lstm_units, activation='tanh')
+
+    if dropout > 0.0 and not mode:
+      raise ValueError(
+          '`mode` must be set to train/eval/predict when using dropout.')
+    self._is_training = True if mode == 'train' else False
+
+  def call(self, image_features, current_lstm_state, prev_action=None):
     """Function call.
 
     Args:
       image_features: A tensor with shape[batch_size, num_views,
         feature_vector_length]
       current_lstm_state: A list of (state_c, state_h) tuple
+      prev_action: Optional tensor with shape[batch_size, feature_dim]
 
     Returns:
       next_hidden_state: Hidden state vector [batch_size, lstm_space_size],
@@ -74,16 +100,32 @@ class ImageEncoder(tf.keras.Model):
     hidden_state = tf.expand_dims(previous_step_lstm_output, axis=1)
     # [batch_size, 1, attention_space_size]
     x = self._projection_hidden_layer(hidden_state)
+    if self._use_layernorm:
+      x = self._hidden_layernorm(x)
     # [batch_size, num_view, attention_space_size]
     y = self._projection_image_feature(image_features)
+    if self._use_layernorm:
+      y = self._image_layernorm(y)
 
     # v_t has shape[batch_size, 1, attention_space_size], representing the
     # current visual context.
     v_t = self.attention([x, y])
-
-
     v_t = tf.squeeze(v_t, axis=1)
+    if prev_action is not None:
+      # Shape = [batch_size, attention_space_size + full_feature_dim]
+      v_t = tf.concat([v_t, prev_action], -1)
+    v_t = self._context_dropout(v_t, training=self._is_training)
+    if self._use_layernorm:
+      v_t = self._context_layernorm(v_t)
     next_lstm_output, next_state = self.history_context_encoder(
         v_t, current_lstm_state)
 
-    return (next_lstm_output, next_state)
+    # Concat context vector to lstm output if concat_context=True.
+    if self._concat_context:
+      # Shape: [batch_size, 1, attention_space_size]
+      next_output = tf.concat([v_t, next_lstm_output], axis=-1)
+      next_output = self._dense(next_output)
+    else:
+      next_output = next_lstm_output
+
+    return (next_output, next_state)

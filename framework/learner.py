@@ -71,7 +71,10 @@ def _maybe_restore_from_ckpt(ckpt_dir: Text, **kwargs):
   checkpoint_prefix = os.path.join(ckpt_dir, 'model.ckpt')
   ckpt = tf.train.Checkpoint(**kwargs)
   manager = tf.train.CheckpointManager(
-      ckpt, checkpoint_prefix, max_to_keep=5, keep_checkpoint_every_n_hours=6)
+      ckpt,
+      checkpoint_prefix,
+      max_to_keep=FLAGS.max_ckpt_to_keep,
+      keep_checkpoint_every_n_hours=6)
   if manager.latest_checkpoint:
     logging.info('Restoring from checkpoint: %s', manager.latest_checkpoint)
     ckpt.restore(manager.latest_checkpoint)
@@ -264,12 +267,13 @@ def run_with_address(
       hparams['logdir'], flush_millis=20000, max_queue=1000)
   last_ckpt_time = time.time()
   with summary_writer.as_default():
-    last_log_iterations = iterations
+    last_log_iterations = iterations.numpy()
     last_log_num_env_frames = iterations * hparams['iter_frame_ratio']
     last_log_time = time.time()
     while iterations < hparams['final_iteration']:
       logging.info('Iteration %d of %d', iterations + 1,
                    hparams['final_iteration'])
+
       # Save checkpoint at specified intervals or if no previous ckpt exists.
       current_time = time.time()
       if (current_time - last_ckpt_time >= FLAGS.save_checkpoint_secs or
@@ -287,9 +291,9 @@ def run_with_address(
         tf.summary.scalar(norm_summ_family + name, norm, step=iterations)
 
       if current_time - last_log_time >= 120:
-        num_env_frames = iterations * hparams['iter_frame_ratio']
+        num_env_frames = iterations.numpy() * hparams['iter_frame_ratio']
         num_frames_since = num_env_frames - last_log_num_env_frames
-        num_iterations_since = iterations - last_log_iterations
+        num_iterations_since = iterations.numpy() - last_log_iterations
         elapsed_time = time.time() - last_log_time
         tf.summary.scalar(
             'steps_summary/num_environment_frames_per_sec',
@@ -305,7 +309,7 @@ def run_with_address(
             optimizer._decayed_lr(var_dtype=tf.float32),  
             step=iterations)
         last_log_num_env_frames, last_log_iterations, last_log_time = (
-            num_env_frames, iterations, time.time())
+            num_env_frames, iterations.numpy(), time.time())
         logging.info('Number of environment frames: %d', num_env_frames)
 
       problem_type.create_summary(step=iterations, info=info)

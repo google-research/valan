@@ -18,9 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import os
 
 from absl import flags
+import networkx as nx
 import numpy as np
 import tensorflow.compat.v2 as tf
 from valan.framework import common
@@ -45,10 +47,12 @@ class EnvTest(tf.test.TestCase):
         problem='R2R',
         scan_base_dir=self.data_dir,
         data_base_dir=self.data_dir,
+        vocab_dir=self.data_dir,
         vocab_file='vocab.txt',
         images_per_pano=36,
         max_conns=14,
-        image_encoding_dim=2048 + 4,
+        image_encoding_dim=64,
+        direction_encoding_dim=256,
         image_features_dir=os.path.join(self.data_dir, 'image_features'),
         instruction_len=50,
         max_agent_actions=6,
@@ -108,17 +112,22 @@ class EnvTest(tf.test.TestCase):
     scan_id = 0  # testdata only has single scan 'gZ6f7yhEvPG'
     _ = self._env.reset()
     golden_path = [
-        'ba27da20782d4e1a825f0a133ad84da9', '47d8a8282c1c4a7fb3eeeacc45e9d959',
-        '46cecea0b30e4786b673f5e951bf82d4'
+        '80929af5cf234ae38ac3a2a4e60e4342', 'ba27da20782d4e1a825f0a133ad84da9',
+        '47d8a8282c1c4a7fb3eeeacc45e9d959', '46cecea0b30e4786b673f5e951bf82d4'
     ]
+    nav_graph_filepath = os.path.join(
+        self.data_dir, 'connections/gZ6f7yhEvPG_connectivity.json')
+    graph = load_nav_graph(nav_graph_filepath)
+
     # Step through the trajectory and verify the env_output.
+
     for i, action in enumerate(
-        [self._get_pano_id(p, scan_id) for p in golden_path]):
+        [self._get_pano_id(p, scan_id) for p in golden_path[1:]]):
       expected_time_step = i + 1
-      expected_heading, expected_pitch = self._env._get_heading_pitch(
-          action, scan_id, expected_time_step)
-      if i + 1 < len(golden_path):
-        expected_oracle_action = self._get_pano_id(golden_path[i + 1], scan_id)
+      expected_heading, expected_pitch, _ = get_heading_pitch_distance(
+          graph, golden_path[i], golden_path[i + 1])
+      if i + 2 < len(golden_path):
+        expected_oracle_action = self._get_pano_id(golden_path[i + 2], scan_id)
       else:
         expected_oracle_action = constants.STOP_NODE_ID
       verify_env_output(
@@ -129,7 +138,7 @@ class EnvTest(tf.test.TestCase):
           expected_info='',
           expected_time_step=expected_time_step,
           expected_path_id=1304,
-          expected_pano_name=golden_path[i],
+          expected_pano_name=golden_path[i + 1],
           expected_heading=expected_heading,
           expected_pitch=expected_pitch,
           expected_scan_id=scan_id,
@@ -157,27 +166,6 @@ class EnvTest(tf.test.TestCase):
     scan_id = 0  # testdata only has single scan 'gZ6f7yhEvPG'
     self.assertAlmostEqual(
         self._env.get_distance(2, 5, scan_id), 2.9398794637365659)
-
-  def testGetRelEnc(self):
-    init_heading = np.pi / 2.
-    init_pitch = np.pi
-    enc = np.array([
-        np.sin(init_heading),
-        np.cos(init_heading),
-        np.sin(init_pitch),
-        np.cos(init_pitch), 5., 6., 7., 8.
-    ])
-    final_heading = np.pi
-    final_pitch = 0.
-    expected_enc = np.array([
-        np.sin(init_heading - final_heading),
-        np.cos(init_heading - final_heading),
-        np.sin(init_pitch - final_pitch),
-        np.cos(init_pitch - final_pitch), 5., 6., 7., 8.
-    ])
-    np.testing.assert_array_almost_equal(
-        np.reshape(expected_enc, (1, 8)),
-        env.get_rel_enc(np.reshape(enc, [1, 8]), final_heading, final_pitch))
 
   def testRandom(self):
     scan_id = 0  # testdata only has single scan 'gZ6f7yhEvPG'
@@ -220,10 +208,45 @@ def _get_encoding(filename, expected_size):
   assert len(protos) == 1
   parsed_record = image_features_pb2.ImageFeatures()
   parsed_record.ParseFromString(protos[0])
-  enc = np.array(parsed_record.value)
-  if np.size(enc) != expected_size:
-    enc = np.pad(enc, (0, expected_size - np.size(enc)), mode='constant')
+  enc = np.zeros(expected_size)
+  enc[:parsed_record.shape[0]] = np.array(
+      parsed_record.value).reshape(parsed_record.shape)
   return enc
+
+
+def load_nav_graph(filename):
+  def distance(pose1, pose2):
+    # Euclidean distance between two graph poses.
+    return ((pose1['pose'][3]-pose2['pose'][3])**2\
+      + (pose1['pose'][7]-pose2['pose'][7])**2\
+      + (pose1['pose'][11]-pose2['pose'][11])**2)**0.5
+
+  graph = nx.Graph()
+  positions = {}
+  data = json.load(tf.io.gfile.GFile(filename))
+  for i, item in enumerate(data):
+    if item['included']:
+      for j, conn in enumerate(item['unobstructed']):
+        if conn and data[j]['included']:
+          positions[item['image_id']] = np.array(
+              [item['pose'][3], item['pose'][7], item['pose'][11]])
+          assert data[j]['unobstructed'][i], 'Graph should be undirected'
+          graph.add_edge(item['image_id'], data[j]['image_id'],
+                         weight=distance(item, data[j]))
+  nx.set_node_attributes(graph, values=positions, name='position')
+  return graph
+
+
+def get_heading_pitch_distance(graph, from_pano_name, to_pano_name):
+  # Calculate heading, pitch, distance directly from the connection graph.
+  positions = graph.nodes(data='position')
+  heading_vector = positions[to_pano_name] - positions[from_pano_name]
+  # R2R dataset heading is defined clockwise from y-axis.
+  heading = np.pi / 2.0 - np.arctan2(heading_vector[1], heading_vector[0])
+  pitch = np.arctan2(heading_vector[2],
+                     (heading_vector[0]**2 + heading_vector[1]**2)**0.5)
+  distance = np.linalg.norm(heading_vector)
+  return heading, pitch, distance
 
 
 def verify_env_output(test, env_output, expected_reward, expected_done,
@@ -239,8 +262,13 @@ def verify_env_output(test, env_output, expected_reward, expected_done,
   test.assertEqual(
       test._env._scan_info[expected_scan_id]
       .pano_name_to_id[expected_pano_name], obs[constants.PANO_ID])
-  test.assertEqual(expected_heading, obs[constants.HEADING])
-  test.assertEqual(expected_pitch, obs[constants.PITCH])
+  # Allow small differences since env.py uses house files and the test calcs are
+  # based on the connection graphs, which are in turn based on the matterport
+  # camera poses files. Camera positions differ by a few centimeters.
+  test.assertAlmostEqual(expected_heading, obs[constants.HEADING].item(),
+                         places=1)
+  test.assertAlmostEqual(expected_pitch, obs[constants.PITCH].item(),
+                         places=1)
   test.assertEqual(expected_scan_id, obs[constants.SCAN_ID])
   test.assertEqual(expected_oracle_action, obs[constants.ORACLE_NEXT_ACTION])
   instr_len = (obs[constants.INS_TOKEN_IDS] > 0).sum()
@@ -249,19 +277,28 @@ def verify_env_output(test, env_output, expected_reward, expected_done,
   np.testing.assert_array_equal(valid_conn_mask, obs[constants.VALID_CONN_MASK])
   raw_pano_enc = _get_encoding(
       os.path.join(test._env_config.image_features_dir,
-                   '{}_viewpoints_proto'.format(expected_pano_name)), 2052 * 36)
+                   '{}_viewpoints_proto'.format(expected_pano_name)),
+      [36, 64])
   np.testing.assert_array_almost_equal(
-      env.get_rel_enc(
-          np.reshape(raw_pano_enc, (36, 2052)), expected_heading,
-          expected_pitch), obs[constants.PANO_ENC])
+      raw_pano_enc, obs[constants.PANO_ENC][:, :64])
   raw_conn_enc = _get_encoding(
       os.path.join(test._env_config.image_features_dir,
                    '{}_connections_proto'.format(expected_pano_name)),
-      2052 * 14)
+      [14, 64])
   np.testing.assert_array_almost_equal(
-      env.get_rel_enc(
-          np.reshape(raw_conn_enc, (14, 2052)), expected_heading,
-          expected_pitch), obs[constants.CONN_ENC])
+      raw_conn_enc, obs[constants.CONN_ENC][:, :64])
+  # Tests next_golden_action_enc.
+  if constants.NEXT_GOLDEN_ACTION_ENC in obs:
+    current_pano_id = obs[constants.PANO_ID]
+    current_pano_index = obs[constants.GOLDEN_PATH].index(current_pano_id)
+    next_pano_id = obs[constants.GOLDEN_PATH][current_pano_index + 1]
+    if next_pano_id == -1:
+      # Replace invalid node to stop node.
+      next_pano_id = 0
+    conn_idx = np.argwhere(test._env._scan_info[expected_scan_id]
+                           .conn_ids[current_pano_id] == next_pano_id).item()
+    np.testing.assert_array_almost_equal(
+        raw_conn_enc[conn_idx], obs[constants.NEXT_GOLDEN_ACTION_ENC][:64])
 
 
 if __name__ == '__main__':

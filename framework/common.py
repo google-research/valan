@@ -77,6 +77,10 @@ AC_LOSS = 0
 CE_LOSS = 1
 # Discriminative model Cross-Entropy loss
 DCE_LOSS = 2
+# Discriminative model focal loss
+DCE_FOCAL_LOSS = 3
+# Discriminator Batch Softmax loss
+DISC_BATCH_LOSS = 4
 
 STEP = "__reserved__step"
 

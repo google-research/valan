@@ -32,6 +32,7 @@ flags.DEFINE_enum('agent_device', 'CPU', ['CPU', 'GPU', 'TPU'],
 flags.DEFINE_integer('queue_capacity', 0, 'Capacity of the learner queue')
 
 flags.DEFINE_integer('batch_size', 1, 'Batch size for training.')
+flags.DEFINE_integer('max_ckpt_to_keep', 5, 'Max num of ckpt to keep.')
 
 # Loss settings.
 flags.DEFINE_float('entropy_cost', 0.0001, 'Entropy cost/multiplier.')
@@ -39,6 +40,22 @@ flags.DEFINE_float('baseline_cost', .5, 'Baseline cost/multiplier.')
 flags.DEFINE_float('discounting', 0.0, 'Discounting factor.')
 flags.DEFINE_enum('reward_clipping', '', ['', 'abs_one', 'soft_asymmetric'],
                   'Reward clipping.')
+flags.DEFINE_float('focal_loss_gamma', 2.0,
+                   'The gamma (power) factor for focal loss.')
+flags.DEFINE_float(
+    'focal_loss_alpha', 0.5, 'Alpha factor for focal loss. Positive labels are '
+    'weighted by alpha, negative labels are weighted by (1 - alpha); 0.5 means '
+    'positive and negative are equally weighted.')
+flags.DEFINE_float('focal_loss_normalizer', 0.1, 'Normalizer for focal loss.')
+
+# Discriminator loss settings.
+flags.DEFINE_bool(
+    'use_batch_and_ce_losses', True, 'If set, then combine batch softmax loss'
+    'with classification CE loss for the discriminator when `loss_type` is '
+    'batch_loss.'
+)
+flags.DEFINE_float('disc_batch_loss_scale', 1.0, 'Scale multiplier for '
+                   'discriminator batch softmax loss when used with CE loss.')
 
 # Optimizer settings.
 flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate.')
@@ -47,4 +64,3 @@ flags.DEFINE_float('lr_decay_steps', 0., 'decay steps for learning rate.')
 flags.DEFINE_float(
     'gradient_clip_norm', 0.,
     'Caps gradients to this value before applying to variables.')
-

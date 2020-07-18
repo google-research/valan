@@ -22,12 +22,23 @@ import os
 
 from absl import flags
 from absl.testing import parameterized
+import numpy as np
 import tensorflow.compat.v2 as tf
 
 from valan.r2r import house_parser
 from valan.r2r import house_utils
 
 FLAGS = flags.FLAGS
+
+
+def distance_heading_pitch(from_xyz, to_xyz, apply_r2r_correction=True):
+  displacement = np.array(to_xyz) - np.array(from_xyz)
+  distance = np.linalg.norm(displacement)
+  heading = np.arctan2(displacement[1], displacement[0])
+  if apply_r2r_correction:
+    heading = 0.5 * np.pi - heading
+  pitch = np.arctan2(displacement[2], np.linalg.norm(displacement[:2]))
+  return distance, heading, pitch
 
 
 class R2RHouseParserTest(tf.test.TestCase):
@@ -46,6 +57,12 @@ class R2RHouseParserTest(tf.test.TestCase):
     # or there are no colliding indices for annotations in the same category.
     self.house = house_parser.R2RHouseParser(
         house_file_path, category_map_dir=base_dir)
+    self.addTypeEqualityFunc(float, self.assertAngleAlmostEqual)
+
+  def assertAngleAlmostEqual(self, actual, expected, msg=None):
+    # Account for periodicity in angle comparisons.
+    self.assertAlmostEqual(np.cos(actual), np.cos(expected), msg)
+    self.assertAlmostEqual(np.sin(actual), np.sin(expected), msg)
 
   def test_parser(self):
     self.assertEqual(37, self.house.num_regions)
@@ -271,9 +288,16 @@ class R2RHouseParserTest(tf.test.TestCase):
       expected_heading = house_utils.compute_heading_angle(test_node_xyz, xyz)
       expected_pitch = house_utils.compute_pitch_angle(test_node_xyz, xyz)
       connection = graph.get_connection(test_node, neighbor)
+      # Test that results are consistent with house_utils.
       self.assertAlmostEqual(connection.distance, expected_distance)
       self.assertAlmostEqual(connection.heading, expected_heading)
       self.assertAlmostEqual(connection.pitch, expected_pitch)
+      # Test results against independent calculations.
+      expected_distance, expected_heading, expected_pitch =\
+          distance_heading_pitch(test_node_xyz, xyz)
+      self.assertAngleAlmostEqual(connection.distance, expected_distance)
+      self.assertAngleAlmostEqual(connection.heading, expected_heading)
+      self.assertAngleAlmostEqual(connection.pitch, expected_pitch)
 
     expected_excluded_panos = [
         '49806ddec46b4c1b8a268f1fa24fa0c0', 'e89e910f7fd0456f8bfc5ac4821caafc',

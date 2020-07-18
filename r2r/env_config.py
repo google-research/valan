@@ -23,6 +23,7 @@ from valan.r2r import constants
 DEFAULT_ENV_CONFIG = {
     'scan_base_dir': '',  # Base dir for scan data, eg., `scans`, `connections`.
     'data_base_dir': '',  # Base dir for input JSON and vocab files.
+    'vocab_dir': '',  # Base dir for vocab.
     'vocab_file': 'trainval_vocab.txt',
     'images_per_pano': 36,
     'max_conns': 14,
@@ -32,6 +33,7 @@ DEFAULT_ENV_CONFIG = {
     'fov': 0.2,
     'image_features_dir': '',
     'image_encoding_dim': 2048,
+    'direction_encoding_dim': 256,  # Must be a multiple of 8.
     # The following are set in `get_default_env_config`.
     'reward_fn': '',
 }

@@ -300,22 +300,21 @@ def compute_heading_angle(source_coordinates,
     source_coordinates: Source triplet with xyz coordinates.
     target_coordinates: Target triplet with xyz coordinates.
     radians: Whether to output in radians or degrees.
-    apply_r2r_correction: Whether to apply standard angle corretion for r2r
-      dataset.
+    apply_r2r_correction: Whether to use the R2R dataset heading definition.
+        If true, heading is computed with respect to the y-axis, increasing
+        clockwise. See
+        https://github.com/peteanderson80/Matterport3DSimulator/blob/master/README.md#simulator-api.
 
   Returns:
-    Heading angle in the xy plane. Angle is computed with respect to x axis,
-    increasing counterclockwise.
+    Heading angle in the xy plane. Angle is computed with respect to the y-axis,
+    increasing clockwise, unless apply_r2r_correction is false.
   """
   source_x, source_y, _ = source_coordinates
   target_x, target_y, _ = target_coordinates
   angle = math.atan2(target_y - source_y, target_x - source_x)
 
-  # This is necessary to ensure the connection heading angles are in the
-  # same referential as the cameras. This was empirically discovered and
-  # seems consistent across different houses.
   if apply_r2r_correction:
-    angle = 4. / 3 * math.pi - angle
+    angle = 0.5 * math.pi - angle
 
   if radians:
     return angle % (2 * math.pi)

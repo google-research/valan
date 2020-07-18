@@ -24,7 +24,7 @@ import collections
 import tensorflow.compat.v2 as tf
 from valan.framework import common
 from valan.framework import problem_type
-from valan.r2r import agent_config
+from valan.r2r import agent_config as agent_config_lib
 from valan.r2r import constants
 from valan.r2r import discriminator_agent
 from valan.r2r import env
@@ -39,16 +39,28 @@ R2RDebugInfo = collections.namedtuple(
 class DiscriminatorProblem(problem_type.ProblemType):
   """Mock problem type."""
 
-  def __init__(self, runtime_config, mode, data_sources):
+  def __init__(self, runtime_config, mode, data_sources, agent_config=None,
+               env_config=None):
     self._runtime_config = runtime_config
     self._mode = mode
     self._data_sources = data_sources
 
+    self._env_config = (
+        env_config if env_config else env_config_lib.get_default_env_config())
     self._env = None
     self._loss_type = None
     self._eval_dict = self._get_eval_dict()
-    self._agent = discriminator_agent.DiscriminatorAgent(
-        agent_config.get_r2r_agent_config())
+
+    agent_config = (
+        agent_config
+        if agent_config else agent_config_lib.get_r2r_agent_config())
+    agent_type = (
+        agent_config.agent_type
+        if hasattr(agent_config, 'agent_type') else 'default')
+    if agent_type == 'default':
+      self._agent = discriminator_agent.DiscriminatorAgent(agent_config)
+    elif agent_type == 'v2':
+      self._agent = discriminator_agent.DiscriminatorAgentV2(agent_config)
 
   def _get_eval_dict(self):
     return {
@@ -61,7 +73,7 @@ class DiscriminatorProblem(problem_type.ProblemType):
       self._env = env.R2REnv(
           data_sources=self._data_sources,
           runtime_config=self._runtime_config,
-          env_config=env_config_lib.get_default_env_config())
+          env_config=self._env_config)
     return self._env
 
   def get_agent(self):
@@ -83,20 +95,41 @@ class DiscriminatorProblem(problem_type.ProblemType):
   def get_episode_loss_type(self, iterations):
     return common.DCE_LOSS
 
-  def select_actor_action(self, env_output, agent_output):
-    # Agent_output is unused here.
-    oracle_next_action = env_output.observation[constants.ORACLE_NEXT_ACTION]
-    oracle_next_action_indices = tf.where(
-        tf.equal(env_output.observation[constants.CONN_IDS],
-                 oracle_next_action))
-    oracle_next_action_idx = tf.reduce_min(oracle_next_action_indices)
-    assert self._mode, 'mode must be set.'
-    action_idx = oracle_next_action_idx
-    action_val = env_output.observation[constants.CONN_IDS][action_idx]
+  def select_actor_action(self, env_output, unused_agent_output):
+    """Returns the next ground truth action pano id."""
+    time_step = env_output.observation[constants.TIME_STEP]
+    current_pano_id = env_output.observation[constants.PANO_ID]
+    golden_path = env_output.observation[constants.GOLDEN_PATH]
+    golden_path_len = sum(
+        [1 for pid in golden_path if pid != constants.INVALID_NODE_ID])
+
+    # Sanity check: ensure pano id is on the golden path.
+    if current_pano_id != golden_path[time_step]:
+      raise ValueError(
+          'Current pano id does not match that in golden path: {} vs. {}'
+          .format(current_pano_id, golden_path[time_step]))
+
+    if ((current_pano_id == env_output.observation[constants.GOAL_PANO_ID] and
+         time_step == golden_path_len - 1) or
+        current_pano_id == constants.STOP_NODE_ID):
+      next_golden_pano_id = constants.STOP_NODE_ID
+    else:
+      next_golden_pano_id = golden_path[time_step + 1]
+
+    try:
+      unused_action_idx = tf.where(
+          tf.equal(env_output.observation[constants.CONN_IDS],
+                   next_golden_pano_id))
+    except ValueError:
+      # Current and next panos are not connected, use idx for invalid node.
+      unused_action_idx = unused_action_idx = tf.where(
+          tf.equal(env_output.observation[constants.CONN_IDS],
+                   constants.INVALID_NODE_ID))
+    unused_action_idx = tf.cast(tf.reduce_min(unused_action_idx), tf.int32)
     return common.ActorAction(
-        chosen_action_idx=int(action_idx.numpy()),
-        oracle_next_action_idx=int(oracle_next_action_idx.numpy())), int(
-            action_val)
+        chosen_action_idx=unused_action_idx.numpy(),
+        oracle_next_action_idx=unused_action_idx.numpy()), int(
+            next_golden_pano_id)
 
   def eval(self, action_list, env_output_list, agent_output=None):
     result = {}

@@ -26,6 +26,11 @@ R2R_AGENT_CONFIG = {
     'oov_bucket_size': 1,
     'vocab_size': 1082,
     'word_embed_dim': 300,
+    'l2_scale': 0.0,
+    'dropout': 0.0,
+    'concat_context': False,
+    'layernorm': False,
+    'embed_action': True,
 }
 
 NDH_AGENT_CONFIG = {

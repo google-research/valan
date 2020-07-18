@@ -119,10 +119,11 @@ def run_with_address(listen_address, hparams):
           one_key = next(iter(current_step_sum.metrics_sum.keys()))
           idx = one_key.rfind('/')
           metrics_prefix = one_key[:idx] if idx >= 0 else ''
+          current_step = int(current_step_sum.step)
           tf.summary.scalar(
               '{}/summary_count'.format(metrics_prefix),
               float(current_step_sum.count),
-              step=int(current_step_sum.step))
+              step=current_step)
           for key, value in current_step_sum.metrics_sum.items():
             if key.endswith(common.VISUALIZATION_IMAGES):
               logging.info('Visualizing images....')
@@ -131,16 +132,38 @@ def run_with_address(listen_address, hparams):
                   key,
                   images,
                   max_outputs=NUM_EVAL_SAMPLES,
-                  step=int(current_step_sum.step))
+                  step=current_step)
             elif key.endswith(common.AUC):
-              predictions = [v[0][0][0] for v in value]
+              predictions = [v[0][0] for v in value]
               labels = [v[1] for v in value]
               auc = tf.keras.metrics.AUC()
               auc.update_state(labels, predictions)
               tf.summary.scalar(
                   key,
                   float(auc.result().numpy()),
-                  step=int(current_step_sum.step))
+                  step=current_step)
+              tf.summary.scalar(
+                  key.replace(common.AUC, 'average_label'),
+                  np.mean(labels),
+                  step=current_step)
+              # Histograms.
+              tf.summary.histogram(
+                  'Predictions/hist_all',
+                  predictions,
+                  step=current_step,
+                  buckets=50)
+              if np.sum(np.array(labels) == 1) > 0:
+                tf.summary.histogram(
+                    'Predictions/hist_GT',
+                    [p for p, l in zip(predictions, labels) if l == 1],
+                    step=current_step,
+                    buckets=50)
+              if np.sum(np.array(labels) == 0) > 0:
+                tf.summary.histogram(
+                    'Predictions/hist_synthetic',
+                    [p for p, l in zip(predictions, labels) if l == 0],
+                    step=current_step,
+                    buckets=50)
             else:
               metric_avg = value / float(current_step_sum.count)
               logging.info('Key %s, value %f', key, metric_avg)

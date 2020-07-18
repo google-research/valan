@@ -53,7 +53,6 @@ pytype_strict_library(
 pytype_strict_library(
     name = "streetview_constants",
     srcs = ["streetview_constants.py"],
-    deps = [],
 )
 
 py_library(

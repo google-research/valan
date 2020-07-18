@@ -56,6 +56,7 @@ class NDHEnv(env.R2REnv):
     assert isinstance(runtime_config, common.RuntimeConfig)
 
     env_config = env_config if env_config else _get_default_env_config()
+    self._env_config = env_config
 
     all_paths = _get_all_paths_ndh(
         data_sources=data_sources,

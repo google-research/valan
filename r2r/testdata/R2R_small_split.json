@@ -14,7 +14,8 @@
       "Walk forward to the padded benches. Turn right and walk between them. Wait near the first pillow on the left, close to the altar. ",
       "Take a right down the lane through the two sets of pews, walk towards the left corner of the church and stop at the one step. ",
       "Walk around the pews and towards the front of the room with the paintings of religious figures and a stage area. "
-    ]
+    ],
+    "label": 1
   },
   {
     "distance": 5.35,
@@ -31,6 +32,7 @@
       "Walk towards the benches and up the aisle down the middle. At the end of the aisle take a right and stop in front of the cabinet. ",
       "Walk up the aisle and wait to the left of the altar. ",
       "go towards the middle of the aisle. Take a left and go to the front of the room at the end of the aisle. Take a left and stop in front of the small piece of furniture and painting. "
-    ]
+    ],
+    "label": 1
   }
 ]
