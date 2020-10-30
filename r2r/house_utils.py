@@ -148,6 +148,23 @@ class Graph(object):
       return source
     return self.nodes[source].best_paths[target][1]
 
+  def get_shortest_path_to_target(self, source, target):
+    """Finds the shortest path from source to a given target.
+
+    This method relies on pre-computed distances from each node to others.
+
+    Args:
+      source: node_id of the source node.
+      target: node_id of the target node.
+
+    Returns:
+      shortest_path: a list of node ids on the shortest path.
+    """
+    if source == target:
+      # If the pano is the target, we return itself as a convention.
+      return [source]
+    return self.nodes[source].best_paths[target]
+
   def get_edit_distance(self, path1, path2):
     """Returns the minimum cost of edition from one path to another.
 

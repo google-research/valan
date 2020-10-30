@@ -25,25 +25,21 @@ from __future__ import google_type_annotations
 from __future__ import print_function
 
 import pickle
+import time
 from typing import Any, Dict, Optional, Text
+
 from absl import flags
 from absl import logging
 from seed_rl import grpc
 from six.moves import range
 import tensorflow.compat.v2 as tf
-
-from valan.framework import actor_config  
 from valan.framework import common
-from valan.framework import learner_config  
+from valan.framework import hyperparam_flags  
 from valan.framework import problem_type as framework_problem_type
 from valan.framework import utils
 
-FLAGS = flags.FLAGS
 
-flags.DEFINE_integer(
-    'sync_agent_every_n_steps', 1,
-    'Synchronize agent variable values every n steps. Increasing this will '
-    'reduce bandwidth consumption at the cost of training on older policies.')
+FLAGS = flags.FLAGS
 
 
 def add_time_dimension(s: tf.TensorSpec):
@@ -87,7 +83,8 @@ def _write_tensor_specs(initial_agent_state: Any,
 
 
 def run_with_learner(problem_type: framework_problem_type.ProblemType,
-                     learner_address: Text, hparams: Dict[Text, Any]):
+                     learner_address: Text, hparams: Dict[Text, Any],
+                     num_retries: int = 10):
   """Runs actor with the given learner address and problem type.
 
   Args:
@@ -96,6 +93,7 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
       `variable_values`: which returns latest value of trainable variables.
       `enqueue`: which accepts nested tensors of type `ActorOutput` tuple.
     hparams: A dict containing hyperparameter settings.
+    num_retries: number of retries when the learner is closed.
   """
   env = problem_type.get_environment()
   agent = problem_type.get_agent()
@@ -134,6 +132,7 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
   agent_state = tf.nest.map_structure(lambda t: tf.expand_dims(t, 0),
                                       initial_agent_state)
 
+  retry = 0
   iterations = 0
   while iter_steps < hparams['max_iter'] or hparams['max_iter'] == -1:
     logging.info('Iteration %d of %d', iter_steps + 1, hparams['max_iter'])
@@ -202,7 +201,20 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
         loss_type=tf.convert_to_tensor(loss_type, tf.int32),
         info=pickle.dumps(infos))
     flattened = tf.nest.flatten(actor_output)
-    client.enqueue(flattened)  # pytype: disable=attribute-error
+
+    try:
+      # NOTE: must disable the following to avoid pytype error.
+      client.enqueue(flattened)  # pytype: disable=attribute-error
+      retry = 0  # Reset retry.
+    except tf.errors.UnavailableError:
+      if retry > num_retries:
+        raise ConnectionError('Learner unavailable. Lost connection.')
+      retry += 1
+      logging.warn('Sever unavailable. Wait 60secs (retry %s out of %s).',
+                   retry, num_retries)
+      time.sleep(60)
+      # Reconnect to learner.
+      client = grpc.Client(learner_address)
     iter_steps += 1
 
 

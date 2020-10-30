@@ -68,6 +68,9 @@ class R2REnv(base_env.BaseEnv):
 
     env_config = env_config if env_config else _get_default_env_config()
     self._env_config = env_config
+    self._add_direction_encs = (
+        env_config.add_direction_encs
+        if hasattr(env_config, 'add_direction_encs') else True)
 
     all_paths = _get_all_paths(
         data_sources=data_sources,
@@ -265,11 +268,20 @@ class R2REnv(base_env.BaseEnv):
     # the longest path.
     padded_golden_path = padded_golden_path[:self._max_actions_per_episode]
 
-    connection_encs = _add_direction_encoding(
-        self._scan_info[scan_id].conn_enc[pano_id],
-        self._scan_info[scan_id].conn_heading[pano_id],
-        self._scan_info[scan_id].conn_pitch[pano_id], heading, pitch,
-        direction_repeats)
+    if self._add_direction_encs:
+      connection_encs = _add_direction_encoding(
+          self._scan_info[scan_id].conn_enc[pano_id],
+          self._scan_info[scan_id].conn_heading[pano_id],
+          self._scan_info[scan_id].conn_pitch[pano_id], heading, pitch,
+          direction_repeats)
+      pano_encs = _add_direction_encoding(
+          self._scan_info[scan_id].pano_enc[pano_id],
+          self._scan_info[scan_id].pano_heading[pano_id],
+          self._scan_info[scan_id].pano_pitch[pano_id], heading, pitch,
+          direction_repeats)
+    else:
+      connection_encs = self._scan_info[scan_id].conn_enc[pano_id]
+      pano_encs = self._scan_info[scan_id].pano_enc[pano_id]
 
     obs = {
         constants.IS_START:
@@ -303,11 +315,7 @@ class R2REnv(base_env.BaseEnv):
         constants.VALID_CONN_MASK:
             (self._scan_info[scan_id].conn_ids[pano_id] >= 0)
             .astype(np.float32),
-        constants.PANO_ENC: _add_direction_encoding(
-            self._scan_info[scan_id].pano_enc[pano_id],
-            self._scan_info[scan_id].pano_heading[pano_id],
-            self._scan_info[scan_id].pano_pitch[pano_id],
-            heading, pitch, direction_repeats),
+        constants.PANO_ENC: pano_encs,
         constants.CONN_ENC: connection_encs,
         constants.PREV_ACTION_ENC:
             self._get_previous_action(pano_id, scan_id, time_step),
@@ -357,9 +365,7 @@ class R2REnv(base_env.BaseEnv):
                                   golden_path_ids, connection_encs):
     """Gets the encoding of the next action on the golden path."""
     if time_step >= len(golden_path_ids) - 1:
-      full_feature_dim = (self._env_config.image_encoding_dim +
-                          self._env_config.direction_encoding_dim)
-      stop_action = np.zeros([full_feature_dim], dtype=np.float32)
+      stop_action = np.zeros([self._full_feature_dim], dtype=np.float32)
       return stop_action
 
     next_pano_id = golden_path_ids[time_step + 1]
@@ -380,9 +386,7 @@ class R2REnv(base_env.BaseEnv):
     if time_step == 0:
       # No previous action. TODO(pjand) Consider using learned embeddings rather
       # than zero vectors for this and the representation of the stop action.
-      full_feature_dim = (self._env_config.image_encoding_dim +
-                          self._env_config.direction_encoding_dim)
-      prev_action = np.zeros([full_feature_dim], dtype=np.float32)
+      prev_action = np.zeros([self._full_feature_dim], dtype=np.float32)
     else:
       current_obs = self.get_current_env_output().observation
       prev_pano_id = current_obs[constants.PANO_ID]
@@ -398,6 +402,15 @@ class R2REnv(base_env.BaseEnv):
       prev_action = current_obs[constants.CONN_ENC][conn_idx]
     # Shape [full_feature_dim]
     return prev_action
+
+  @property
+  def _full_feature_dim(self):
+    if self._add_direction_encs:
+      full_feature_dim = (self._env_config.image_encoding_dim +
+                          self._env_config.direction_encoding_dim)
+    else:
+      full_feature_dim = self._env_config.image_encoding_dim
+    return full_feature_dim
 
   def _get_heading_pitch(self, pano_id, scan_id, time_step):
     if time_step == 0:
@@ -500,8 +513,8 @@ def _get_scan_info(env_config, scan_name, stop_node_id, default_conn_id):
       dtype=np.int32)
 
   pano_name_to_id = {p: i for i, p in enumerate(pano_names)}
-  logging.info('Scan: %s, START loading pano and connection encodings.',
-               scan_name)
+  logging.info('Scan: %s, START loading pano and connection encodings from: %s',
+               scan_name, env_config.image_features_dir)
   for i, p in enumerate(pano_names):
     pano_enc_file = os.path.join(env_config.image_features_dir,
                                  '{}_viewpoints_proto'.format(p))
@@ -581,7 +594,7 @@ def _get_all_paths(data_sources, data_base_dir, vocab_dir, vocab_file,
   # Problem specific files, e.g., R2R_train.json, R2R_val_seen.json.
   filenames = [
       os.path.join(data_base_dir, '{}.json'.format(source))
-      for source in data_sources
+      for source in data_sources if source
   ]
   processed_paths = []
   for filename in filenames:

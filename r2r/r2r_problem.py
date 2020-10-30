@@ -27,7 +27,6 @@ import tensorflow.compat.v2 as tf
 import tensorflow_probability as tfp
 from valan.framework import common
 from valan.framework import problem_type
-
 from valan.r2r import agent
 from valan.r2r import agent_config
 from valan.r2r import constants
@@ -36,6 +35,8 @@ from valan.r2r import curriculum_env_config as curriculum_env_config_lib
 from valan.r2r import env
 from valan.r2r import env_config as env_config_lib
 from valan.r2r import eval_metric
+from valan.r2r.multi_task import mt_agent
+from valan.r2r.multi_task import mt_agent_config
 
 
 R2RDebugInfo = collections.namedtuple(
@@ -43,16 +44,26 @@ R2RDebugInfo = collections.namedtuple(
 
 
 class R2RProblem(problem_type.ProblemType):
-  """Mock problem type."""
+  """Problem type for R2R."""
 
-  def __init__(self, runtime_config, mode, data_sources, curriculum=''):
+  def __init__(self,
+               runtime_config,
+               mode,
+               data_sources,
+               curriculum='',
+               agent_type='r2r'):
     self._runtime_config = runtime_config
     self._mode = mode
     self._data_sources = data_sources
     self._curriculum = curriculum
 
+    if agent_type == 'r2r':
+      self._agent = agent.R2RAgent(agent_config.get_r2r_agent_config())
+    elif agent_type == 'mt':
+      self._agent = mt_agent.MTEnvAgAgent(mt_agent_config.get_agent_config())
+    else:
+      raise ValueError('Invalid agent_type: {}'.format(agent_type))
 
-    self._agent = agent.R2RAgent(agent_config.get_r2r_agent_config())
     self._prob_ac = 0.5
     self._env = None
     self._loss_type = None

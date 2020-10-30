@@ -19,11 +19,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import pickle
 
 from absl import flags
 from seed_rl import grpc
 import tensorflow.compat.v2 as tf
+from tensorflow.io import gfile
 from valan.framework import eval_actor
+from valan.framework import hyperparam_flags  
 from valan.framework import testing_utils
 
 FLAGS = flags.FLAGS
@@ -48,7 +51,7 @@ class EvalActorTest(tf.test.TestCase):
     mock_problem = testing_utils.MockProblem(unroll_length=FLAGS.unroll_length)
     agent = mock_problem.get_agent()
     ckpt_manager = _get_ckpt_manager(hparams['logdir'], agent=agent)
-    ckpt_manager.save(checkpoint_number=0)
+    checkpoint_path = ckpt_manager.save(checkpoint_number=0)
 
     # Create a no-op gRPC server that responds to Aggregator RPCs.
     server_address = 'unix:/tmp/eval_actor_test_grpc'
@@ -58,11 +61,22 @@ class EvalActorTest(tf.test.TestCase):
     def eval_enqueue(_):
       return []
 
-    server.bind(eval_enqueue, batched=False)
-
+    # Test 01. Eval with aggregator.
+    server.bind(eval_enqueue)
     server.start()
+    eval_actor.run_evaluation(mock_problem, server_address, hparams)
 
-    eval_actor.run_with_aggregator(mock_problem, server_address, hparams)
+    # Test 02. Eval without aggregator.
+    hparams['task_id'] = 0000
+    hparams['max_iter'] = 1
+    eval_actor.run_evaluation(
+        mock_problem, None, hparams,
+        checkpoint_path, FLAGS.test_tmpdir, file_prefix='mock_test',
+        test_mode=True)
+    with gfile.GFile(
+        os.path.join(FLAGS.test_tmpdir, 'test_data_0.p'), 'rb') as fp:
+      eval_result = pickle.load(fp)
+    self.assertEqual(eval_result['mock_test_0_0_0000']['result'], 1000.0)
 
 
 if __name__ == '__main__':

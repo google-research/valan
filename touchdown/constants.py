@@ -33,7 +33,9 @@ TD_BASELINE_AGENT_PARAMS = streetview_constants.BaselineAgentParams(
     TEXT_EMBED_DIM=32,
     TIMESTEP_EMBED_DIM=32,
     ACTION_EMBED_DIM=16,
-    MAX_AGENT_ACTIONS=55)
+    MAX_AGENT_ACTIONS=55,
+    L2_SCALE=0.0,
+    )
 
 
 TD_PANO_AGENT_PARAMS = streetview_constants.PanoramicAgentParams(
@@ -53,7 +55,9 @@ TD_PANO_AGENT_PARAMS = streetview_constants.PanoramicAgentParams(
     TEXT_EMBED_DIM=32,
     TIMESTEP_EMBED_DIM=32,
     ACTION_EMBED_DIM=16,
-    MAX_AGENT_ACTIONS=55)
+    MAX_AGENT_ACTIONS=55,
+    L2_SCALE=0.0,
+    )
 
 TD_PANO_AGENT_PARAMS_BIG = streetview_constants.PanoramicAgentParams(
     VOCAB_SIZE=30522+1,
@@ -68,6 +72,8 @@ TD_PANO_AGENT_PARAMS_BIG = streetview_constants.PanoramicAgentParams(
     TEXT_EMBED_DIM=32,
     TIMESTEP_EMBED_DIM=32,
     ACTION_EMBED_DIM=16,
-    MAX_AGENT_ACTIONS=55)
+    MAX_AGENT_ACTIONS=55,
+    L2_SCALE=0.0,
+    )
 
 

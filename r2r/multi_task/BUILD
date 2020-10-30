@@ -7,7 +7,7 @@ licenses(["notice"])
 
 package(
     default_visibility = [
-        "//third_party/py/valan/google/r2r:__subpackages__",
+        "//third_party/py/valan:__subpackages__",
     ],
 )
 

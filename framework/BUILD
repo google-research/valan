@@ -40,16 +40,14 @@ py_library(
 py_library(
     name = "common",
     srcs = ["common.py"],
-    deps = ["@absl_py//absl/flags"],
 )
 
 py_library(
     name = "actor",
     srcs = ["actor.py"],
     deps = [
-        ":actor_config",
         ":common",
-        ":learner_config",
+        ":hyperparam_flags",
         ":problem_type",
         ":utils",
         "//tensorflow:tensorflow_py",
@@ -65,10 +63,10 @@ py_library(
     name = "learner",
     srcs = ["learner.py"],
     deps = [
-        ":actor_config",
         ":base_agent",
         ":common",
-        ":learner_config",
+        ":hyperparam_flags",
+        ":log_ckpt_restoration",
         ":loss_fns",
         ":problem_type",
         ":utils",
@@ -102,6 +100,7 @@ py_library(
     name = "utils",
     srcs = ["utils.py"],
     deps = [
+        "//pyglib:gfile",
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/logging",
     ],
@@ -119,7 +118,6 @@ py_library(
     deps = [
         ":common",
         ":focal_loss",
-        ":learner_config",
         ":utils",
         ":vtrace",
         "//tensorflow:tensorflow_py",
@@ -170,6 +168,9 @@ py_test(
 py_test(
     name = "utils_test",
     srcs = ["utils_test.py"],
+    data = [
+        ":test_data",
+    ],
     python_version = "PY3",
     deps = [
         ":utils",
@@ -217,13 +218,12 @@ py_library(
     name = "eval_actor",
     srcs = ["eval_actor.py"],
     deps = [
-        ":actor_config",
         ":common",
-        ":learner_config",
         ":problem_type",
         ":utils",
         "//tensorflow:tensorflow_py",
         "//tensorflow/cc/seed_rl/grpc",
+        "//third_party/py/typing",
         "@absl_py//absl/flags",
         "@absl_py//absl/logging",
     ],
@@ -235,6 +235,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":eval_actor",
+        ":hyperparam_flags",
         ":testing_utils",
         "//tensorflow:tensorflow_py",
         "//tensorflow/cc/seed_rl/grpc",
@@ -246,9 +247,7 @@ py_library(
     name = "eval_aggregator",
     srcs = ["eval_aggregator.py"],
     deps = [
-        ":actor_config",
         ":common",
-        ":learner_config",
         "//tensorflow:tensorflow_py",
         "//tensorflow/cc/seed_rl/grpc",
         "@absl_py//absl/flags",
@@ -290,6 +289,23 @@ pytype_strict_library(
     deps = ["//tensorflow:tensorflow_py"],
 )
 
+pytype_strict_library(
+    name = "log_ckpt_restoration",
+    srcs = ["log_ckpt_restoration.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tensorflow:tensorflow_py",
+        "@absl_py//absl/logging",
+    ],
+)
+
+pytype_strict_library(
+    name = "hyperparam_flags",
+    srcs = ["hyperparam_flags.py"],
+    srcs_version = "PY3",
+    deps = ["@absl_py//absl/flags"],
+)
+
 py_strict_test(
     name = "focal_loss_test",
     srcs = ["focal_loss_test.py"],
@@ -309,7 +325,7 @@ py_strict_test(
     deps = [
         ":common",
         ":focal_loss",
-        ":learner_config",
+        ":hyperparam_flags",
         ":loss_fns",
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/flags",

@@ -33,6 +33,8 @@ flags.DEFINE_integer('queue_capacity', 0, 'Capacity of the learner queue')
 
 flags.DEFINE_integer('batch_size', 1, 'Batch size for training.')
 flags.DEFINE_integer('max_ckpt_to_keep', 5, 'Max num of ckpt to keep.')
+flags.DEFINE_string('warm_start_ckpt', None,
+                    'Ckpt path to warm start from scratch.')
 
 # Loss settings.
 flags.DEFINE_float('entropy_cost', 0.0001, 'Entropy cost/multiplier.')

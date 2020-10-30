@@ -21,18 +21,27 @@ from valan.framework import hparam
 from valan.r2r import constants
 
 DEFAULT_ENV_CONFIG = {
-    'scan_base_dir': '',  # Base dir for scan data, eg., `scans`, `connections`.
-    'data_base_dir': '',  # Base dir for input JSON and vocab files.
-    'vocab_dir': '',  # Base dir for vocab.
+    # Base dir for scan data, eg., `scans`, `connections`.
+    'scan_base_dir': '',
+    # Base dir for input JSON and vocab files.
+    'data_base_dir': '',
+    # Base dir for vocab.
+    'vocab_dir': '',
     'vocab_file': 'trainval_vocab.txt',
+    # Number of image pathes for each panorama, typically 36.
     'images_per_pano': 36,
     'max_conns': 14,
+    # Max number of instruction tokens.
     'instruction_len': 50,
     'max_agent_actions': 12,
     'reward_fn_type': constants.REWARD_DISTANCE_TO_GOAL,
-    'fov': 0.2,
+    # Field of View used to generate image features.
+    'fov': 0.17,
+    # Dir containing pre-generated image features.
     'image_features_dir': '',
-    'image_encoding_dim': 2048,
+    # Image feature dimension size. 1792 for EfficientNet B4.
+    'image_encoding_dim': 1792,
+    # Direction encoding dimension size.
     'direction_encoding_dim': 256,  # Must be a multiple of 8.
     # The following are set in `get_default_env_config`.
     'reward_fn': '',

@@ -54,7 +54,11 @@ class StreetviewAgent(base_agent.BaseAgent):
         input_dim=params.MAX_AGENT_ACTIONS + 1,
         output_dim=params.TIMESTEP_EMBED_DIM)
 
-    self._core = tf.keras.layers.LSTMCell(256)
+    self._core = tf.keras.layers.LSTMCell(
+        256,
+        kernel_regularizer=tf.keras.regularizers.l2(params.L2_SCALE),
+        recurrent_regularizer=tf.keras.regularizers.l2(params.L2_SCALE),
+    )
 
     self._dense_img = tf.keras.layers.Dense(256, activation=tf.nn.sigmoid)
     self._dense_img_extra = tf.keras.layers.Dense(256, activation=tf.nn.sigmoid)
@@ -67,7 +71,11 @@ class StreetviewAgent(base_agent.BaseAgent):
         mask_zero=True)
 
     self._instruction_rnn_layer = tf.keras.layers.RNN(
-        tf.keras.layers.LSTMCell(params.INSTRUCTION_LSTM_DIM),
+        tf.keras.layers.LSTMCell(
+            params.INSTRUCTION_LSTM_DIM,
+            kernel_regularizer=tf.keras.regularizers.l2(params.L2_SCALE),
+            recurrent_regularizer=tf.keras.regularizers.l2(params.L2_SCALE),
+        ),
         return_sequences=True)
 
     self._policy_logits = tf.keras.layers.Dense(

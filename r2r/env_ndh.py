@@ -54,9 +54,11 @@ class NDHEnv(env.R2REnv):
         lookfar/r2r/env_config.py.
     """
     assert isinstance(runtime_config, common.RuntimeConfig)
-
     env_config = env_config if env_config else _get_default_env_config()
     self._env_config = env_config
+    self._add_direction_encs = (
+        env_config.add_direction_encs
+        if hasattr(env_config, 'add_direction_encs') else True)
 
     all_paths = _get_all_paths_ndh(
         data_sources=data_sources,

@@ -32,6 +32,12 @@ FLAGS = flags.FLAGS
 
 class LearnerTest(tf.test.TestCase):
 
+  def setUp(self):
+    super(LearnerTest, self).setUp()
+    # Remove existing local testing dir if exists.
+    if tf.io.gfile.isdir(FLAGS.test_tmpdir):
+      tf.io.gfile.rmtree(FLAGS.test_tmpdir)
+
   def testRunLearner(self):
     FLAGS.unroll_length = 6
     FLAGS.batch_size = 2
@@ -47,6 +53,7 @@ class LearnerTest(tf.test.TestCase):
     server_address = 'unix:/tmp/learner_test_grpc'
     hparams = {}
     hparams['logdir'] = logdir
+    hparams['warm_start_ckpt'] = None
     hparams['final_iteration'] = 5
     hparams['iter_frame_ratio'] = FLAGS.batch_size * FLAGS.unroll_length
 
@@ -61,8 +68,10 @@ class LearnerTest(tf.test.TestCase):
     client = grpc.Client(server_address)
 
     # Send a number of enqueue RPCs to the learner.
-    for _ in range(FLAGS.batch_size * hparams['final_iteration']):
+    for i in range(FLAGS.batch_size * hparams['final_iteration']):
       client.enqueue(tf.nest.flatten(zero_actor_output))  # pytype: disable=attribute-error
+    # Make sure the above `for` loop has completed successfully.
+    self.assertEqual(i, FLAGS.batch_size * hparams['final_iteration'] - 1)
 
     # The learner should terminate after a fixed number of iterations.
     thread.join()

@@ -109,8 +109,7 @@ class DiscriminatorProblem(problem_type.ProblemType):
           'Current pano id does not match that in golden path: {} vs. {}'
           .format(current_pano_id, golden_path[time_step]))
 
-    if ((current_pano_id == env_output.observation[constants.GOAL_PANO_ID] and
-         time_step == golden_path_len - 1) or
+    if (time_step == golden_path_len - 1 or
         current_pano_id == constants.STOP_NODE_ID):
       next_golden_pano_id = constants.STOP_NODE_ID
     else:

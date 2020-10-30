@@ -58,3 +58,13 @@ pytype_strict_library(
         "@absl_py//absl/logging",
     ],
 )
+
+pytype_strict_library(
+    name = "custom_flags",
+    srcs = ["custom_flags.py"],
+    srcs_version = "PY3",
+    deps = [
+        "@absl_py//absl/flags",
+        "@absl_py//absl/logging",
+    ],
+)

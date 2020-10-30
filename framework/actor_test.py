@@ -55,8 +55,8 @@ class ActorTest(tf.test.TestCase):
       testing_utils.assert_matches_spec(flat_specs, tensor_list)
       return []
 
-    server.bind(variable_values, batched=False)
-    server.bind(enqueue, batched=False)
+    server.bind(variable_values)
+    server.bind(enqueue)
 
     server.start()
 

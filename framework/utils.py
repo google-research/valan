@@ -26,6 +26,8 @@ from absl import logging
 import numpy as np
 import tensorflow.compat.v2 as tf
 
+from tensorflow.io import gfile
+
 
 def levenshtein(seq1, seq2):
   """Computes Levenshtein edit distance between two sequences.
@@ -341,3 +343,101 @@ class WallTimer(object):
   def __exit__(self, *args):
     self.stop = tf.timestamp()
     self.duration = self.stop - self.start
+
+
+class NavigationScorePickleAggregator(object):
+  """VALAN navigation score aggregator.
+
+  VALAN scores are computed and saved as pickles. This class contains
+  methods for loading, aggregating and saving combined results.
+  Use case: with async-worker aggregation, sometimes we have workers completing
+  at different paces, which results in the need to use sleep timers or
+  incomplete computation. This method circumvents this problem at the small
+  cost of not being able to view results in TensorBoard (instead results are
+  saved to a pickle).
+
+  Example usage:
+    score_dir = '/path/to/pickled_results/'
+    aggregation_save_path = '/path/to/save/aggregation/results.p'
+    aggregator = utils.NavigationScorePickleAggregator()
+    score_dict, avg_scores = aggregator.get_aggregated_scores([score_dir])
+    with gfile.Open(aggregation_save_path, 'wb') as fp:
+      pickle.dump((score_dict, avg_scores), fp)
+  """
+
+  def _get_scores(self, pickle_path):
+    """Retrieves SR/SPL/SDTW/NDTW from VALAN score pickles.
+
+    The pickled VALAN scores have the following format
+    {
+      'valan_score_<TASK_ID>_<STEP>_<PATH_ID>': {
+        'eval/success_rate': ..,
+        'eval/spl': ..,
+        'eval/sdtw': ..,
+        'eval/norm_dtw': ..,
+        ..
+      },
+      ..
+    }
+    and the files are named with <DATA_ID>_<WORKER_ID>.p
+
+    Args:
+      pickle_path: (string) location of pickle.
+
+    Returns:
+      (list) of VALAN scores for the dataset with <DATA_ID> produced with
+      the worker with <WORKER_ID>.
+    """
+    with gfile.GFile(pickle_path, 'rb') as fp:
+      content = pickle.load(fp)
+    scores = []
+    for value in content.values():
+      scores.append(
+          (float(value['eval/success_rate']),
+           float(value['eval/spl']),
+           float(value['eval/sdtw']),
+           float(value['eval/norm_dtw']))
+      )
+    return scores
+
+  def get_aggregated_scores(self, pickle_dirs):
+    """Processes all the VALAN score pickle files in a directory.
+
+    Args:
+      pickle_dirs: (list) of directories of VALAN score pickles.
+
+    Returns:
+      score_dict: (dict) for lists of SR/SPL/SDTW/NDTW scores. E.g.
+        {'sr': [0.35, 0.34, 0.27], 'spl', [0.46, 0.34, 0.45], ...}
+      avg_scores: (dict) the average of SR/SPL/SDTW/NDTW scores. E.g.
+        {'sr': 0.30, 'spl': 0.40, ...}
+    """
+    score_dict = {
+        'sr': [],
+        'spl': [],
+        'sdtw': [],
+        'ndtw': []
+    }
+    pickle_paths = []
+    for pickle_dir in pickle_dirs:
+      pickle_paths += [os.path.join(pickle_dir, filename)
+                       for filename in gfile.listdir(pickle_dir)]
+    for pickle_path in pickle_paths:
+      scores = self._get_scores(pickle_path)
+      for score in scores:
+        sr, spl, sdtw, ndtw = score
+        score_dict['sr'].append(sr)
+        score_dict['spl'].append(spl)
+        score_dict['sdtw'].append(sdtw)
+        score_dict['ndtw'].append(ndtw)
+
+    avg_scores = {
+        'sr': np.mean(score_dict['sr']),
+        'spl': np.mean(score_dict['spl']),
+        'sdtw': np.mean(score_dict['sdtw']),
+        'ndtw': np.mean(score_dict['ndtw'])
+    }
+
+    return score_dict, avg_scores
+
+

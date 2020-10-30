@@ -37,13 +37,19 @@ class ImageEncoder(tf.keras.Model):
                concat_context=False,
                layernorm=False,
                mode=None,
-               name=None):
+               name=None,
+               use_attention_pooling=True):
     super(ImageEncoder, self).__init__(name=name if name else 'image_encoder')
-    # Projection layers to do attention pooling.
-    self._projection_hidden_layer = tf.keras.layers.Dense(
-        attention_space_size, name='project_hidden')
-    self._projection_image_feature = tf.keras.layers.Dense(
-        attention_space_size, name='project_feature')
+    self._use_attention_pooling = use_attention_pooling
+    if self._use_attention_pooling:
+      # Projection layers to do attention pooling.
+      self._projection_hidden_layer = tf.keras.layers.Dense(
+          attention_space_size, name='project_hidden')
+      self._projection_image_feature = tf.keras.layers.Dense(
+          attention_space_size, name='project_feature')
+    else:
+      self._dense_pooling_layer = tf.keras.layers.Dense(
+          num_lstm_units, name='dense_pooling')
 
     self._cells = []
     for layer_id in range(num_hidden_layers):
@@ -74,19 +80,16 @@ class ImageEncoder(tf.keras.Model):
           '`mode` must be set to train/eval/predict when using dropout.')
     self._is_training = True if mode == 'train' else False
 
-  def call(self, image_features, current_lstm_state, prev_action=None):
-    """Function call.
+  def _attention_pooling(self, image_features, current_lstm_state):
+    """Returns the input tensor for subsequent LSTM using attention pooling.
 
     Args:
       image_features: A tensor with shape[batch_size, num_views,
         feature_vector_length]
-      current_lstm_state: A list of (state_c, state_h) tuple
-      prev_action: Optional tensor with shape[batch_size, feature_dim]
+      current_lstm_state: A list of (state_c, state_h) tuple.
 
     Returns:
-      next_hidden_state: Hidden state vector [batch_size, lstm_space_size],
-        current steps's LSTM output.
-      next_lstm_state: Same shape as current_lstm_state.
+      A pooled visual feature tensor of shape [batch_size, lstm_space_size].
     """
     # Attention-based visual-feature pooling. Pool the visual features of
     # shape [batch_size, num_views, feature_vector_length] to
@@ -111,6 +114,34 @@ class ImageEncoder(tf.keras.Model):
     # current visual context.
     v_t = self.attention([x, y])
     v_t = tf.squeeze(v_t, axis=1)
+    return v_t
+
+  def _dense_pooling(self, image_features):
+    """Flattens and projects all views of pano features into LSTM hidden dim."""
+    batch_size = image_features.shape[0]
+    flat_image_features = tf.reshape(image_features, [batch_size, -1])
+    v_t = self._dense_pooling_layer(flat_image_features)
+    return v_t
+
+  def call(self, image_features, current_lstm_state, prev_action=None):
+    """Function call.
+
+    Args:
+      image_features: A tensor with shape[batch_size, num_views,
+        feature_vector_length]
+      current_lstm_state: A list of (state_c, state_h) tuple
+      prev_action: Optional tensor with shape[batch_size, feature_dim]
+
+    Returns:
+      next_hidden_state: Hidden state vector [batch_size, lstm_space_size],
+        current steps's LSTM output.
+      next_lstm_state: Same shape as current_lstm_state.
+    """
+    if self._use_attention_pooling:
+      v_t = self._attention_pooling(image_features, current_lstm_state)
+    else:
+      v_t = self._dense_pooling(image_features)
+
     if prev_action is not None:
       # Shape = [batch_size, attention_space_size + full_feature_dim]
       v_t = tf.concat([v_t, prev_action], -1)

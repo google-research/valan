@@ -22,7 +22,7 @@ from __future__ import print_function
 from absl import flags
 import tensorflow.compat.v2 as tf
 from valan.framework import common
-from valan.framework import learner_config  
+from valan.framework import hyperparam_flags  
 from valan.framework import loss_fns
 from valan.framework.focal_loss import focal_loss_from_logits
 

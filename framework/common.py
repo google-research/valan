@@ -20,8 +20,6 @@ from __future__ import print_function
 
 import collections
 
-from absl import flags
-
 # Tuple containing state of the environment.
 #  reward: a scalar float specifying the immediate reward for the step.
 #  done: a boolean indicating if this is the end of the current episode.
@@ -70,6 +68,10 @@ ActorOutput = collections.namedtuple("ActorOutput", [
     "loss_type", "info"
 ])
 
+# Tuple contaiming information for aggregator summaries.
+StepSummaries = collections.namedtuple("StepSummaries",
+                                       ("step", "count", "metrics_sum"))
+
 # Different loss types supported in the framework.
 # actor-critic loss
 AC_LOSS = 0
@@ -87,13 +89,3 @@ STEP = "__reserved__step"
 # Special field for visualization images.
 VISUALIZATION_IMAGES = "visualization_images"
 AUC = "auc"
-
-# Flags common for both actor and learner.
-
-flags.DEFINE_string("logdir", "/tmp/agent", "TensorFlow log directory.")
-flags.DEFINE_integer("unroll_length", 10, "Unroll length in agent steps.")
-flags.DEFINE_string(
-    "server_address", "",
-    "Actors use server_address to connect to a learner. Eval actors use "
-    "server_address to connect to an eval aggregator. Learners and eval "
-    "aggregators use server_address to bind to a listen address.")

@@ -48,7 +48,8 @@ BaselineAgentParams = collections.namedtuple(
      'TEXT_EMBED_DIM',
      'TIMESTEP_EMBED_DIM',
      'ACTION_EMBED_DIM',
-     'MAX_AGENT_ACTIONS']
+     'MAX_AGENT_ACTIONS',
+     'L2_SCALE']
 )
 
 
@@ -66,5 +67,6 @@ PanoramicAgentParams = collections.namedtuple(
      'TEXT_EMBED_DIM',
      'TIMESTEP_EMBED_DIM',
      'ACTION_EMBED_DIM',
-     'MAX_AGENT_ACTIONS']
+     'MAX_AGENT_ACTIONS',
+     'L2_SCALE']
 )

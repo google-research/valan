@@ -30,24 +30,22 @@ import functools
 import math
 import os
 import time
+from typing import Any, Dict, List, Text
 
 from absl import flags
 from absl import logging
 from seed_rl import grpc
-import tensorflow.compat.v2 as tf
-from typing import Any, Dict, List, Text
-
-from valan.framework import actor_config  
+import tensorflow as tf
 from valan.framework import base_agent
 from valan.framework import common
-from valan.framework import learner_config  
+from valan.framework import hyperparam_flags  
+from valan.framework import log_ckpt_restoration
 from valan.framework import loss_fns
 from valan.framework import problem_type as framework_problem_type
 from valan.framework import utils
 
 from tensorflow.contrib import rnn
 from tensorflow.python.client import device_lib  
-
 
 FLAGS = flags.FLAGS
 
@@ -79,6 +77,27 @@ def _maybe_restore_from_ckpt(ckpt_dir: Text, **kwargs):
     logging.info('Restoring from checkpoint: %s', manager.latest_checkpoint)
     ckpt.restore(manager.latest_checkpoint)
   return manager
+
+
+def _warm_start_from_ckpt(warm_start_ckpt_path: Text, training_ckpt_dir: Text,
+                          model):
+  """Initializes model weights from given ckpt and logs restoration status."""
+  # Sets up a ckpt to restore weights only without optimizer.
+  warmstart_ckpt = tf.train.Checkpoint(model=model)
+  logging.info('Warm-starting from checkpoint (w/o optimizer): %s',
+               warm_start_ckpt_path)
+  # Use a weak assertion (fails when nothing is matched) and get the
+  # restoration status object.
+  status = warmstart_ckpt.restore(
+      warm_start_ckpt_path).assert_nontrivial_match()
+
+  # Save restoration details to file.
+  if not tf.io.gfile.isdir(training_ckpt_dir):
+    logging.warning(
+        'Dir not found. Skip saving ckpt restoration information to: %s',
+        training_ckpt_dir)
+  else:
+    log_ckpt_restoration.log_status(status, training_ckpt_dir)
 
 
 def _create_server(
@@ -121,7 +140,7 @@ def _create_server(
     queue.enqueue(tensors)
     return []
 
-  server.bind(enqueue, batched=False)
+  server.bind(enqueue)
 
   @tf.function(input_signature=[])
   def variable_values():
@@ -129,7 +148,7 @@ def _create_server(
     all_vars += extra_variables
     return all_vars
 
-  server.bind(variable_values, batched=False)
+  server.bind(variable_values)
 
   return server
 
@@ -244,6 +263,12 @@ def run_with_address(
 
     return step_fn(next(iterator))
 
+  if hparams['warm_start_ckpt']:
+    _warm_start_from_ckpt(
+        warm_start_ckpt_path=hparams['warm_start_ckpt'],
+        training_ckpt_dir=hparams['logdir'],
+        model=agent)
+
   ckpt_manager = _maybe_restore_from_ckpt(
       hparams['logdir'], agent=agent, optimizer=optimizer)
   server = _create_server(
@@ -322,8 +347,6 @@ def run_with_address(
 
 def run(problem_type: framework_problem_type.ProblemType):
   """Runs the learner with the given problem type."""
-  tf.enable_v2_behavior()
-
 
   iter_frame_ratio = FLAGS.batch_size * FLAGS.unroll_length
   final_iteration = int(
@@ -332,4 +355,5 @@ def run(problem_type: framework_problem_type.ProblemType):
   hparams['logdir'] = FLAGS.logdir
   hparams['iter_frame_ratio'] = iter_frame_ratio
   hparams['final_iteration'] = final_iteration
+  hparams['warm_start_ckpt'] = FLAGS.warm_start_ckpt
   run_with_address(problem_type, FLAGS.server_address, hparams)

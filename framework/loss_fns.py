@@ -22,7 +22,6 @@ from __future__ import print_function
 from absl import flags
 import tensorflow.compat.v2 as tf
 from valan.framework import common
-from valan.framework import learner_config  
 from valan.framework import utils
 from valan.framework import vtrace
 from valan.framework.focal_loss import focal_loss_from_logits
@@ -125,6 +124,9 @@ def get_ac_loss(learner_agent_output, env_output, actor_agent_output,
   pg_advantages = vtrace_returns.pg_advantages
   v_advantages = vtrace_returns.vs - learner_agent_output.baseline
   tf.summary.histogram('pg_advantages', pg_advantages, step=num_steps)
+  tf.summary.histogram('vs', vtrace_returns.vs, step=num_steps)
+  tf.summary.histogram('baseline', learner_agent_output.baseline,
+                       step=num_steps)
   tf.summary.histogram('v_advantages', v_advantages, step=num_steps)
 
   # Compute loss as a weighted sum of the baseline loss, the policy gradient

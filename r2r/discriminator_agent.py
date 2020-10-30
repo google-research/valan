@@ -38,6 +38,8 @@ class DiscriminatorAgent(base_agent.BaseAgent):
     """Initialize R2R Agent."""
     super(DiscriminatorAgent,
           self).__init__(name=name if name else 'discriminator_r2r')
+    use_bert_emb = (
+        config.use_bert_emb if hasattr(config, 'use_bert_emb') else False)
     self._instruction_encoder = instruction_encoder.InstructionEncoder(
         num_hidden_layers=2,
         output_dim=256,
@@ -48,6 +50,7 @@ class DiscriminatorAgent(base_agent.BaseAgent):
         l2_scale=config.l2_scale,
         dropout=config.dropout,
         layernorm=config.layernorm,
+        use_bert_embeddings=use_bert_emb,
         mode=mode)
 
     # If False, the text and image encoders are independent from each other.
@@ -58,16 +61,24 @@ class DiscriminatorAgent(base_agent.BaseAgent):
         config, 'embed_prev_action') else False
     self._embed_next_action = config.embed_next_action if hasattr(
         config, 'embed_next_action') else False
+    self._use_attn_pooling = config.use_attn_pooling if hasattr(
+        config, 'use_attn_pooling') else True
+    image_enc_attention_dim = (
+        config.image_enc_attention_dim
+        if hasattr(config, 'image_enc_attention_dim') else 256)
+    image_enc_hidden_dim = (
+        config.image_enc_hidden_dim
+        if hasattr(config, 'image_enc_hidden_dim') else 512)
     self._image_encoder = image_encoder.ImageEncoder(
-        attention_space_size=256,
-        num_lstm_units=512,
+        attention_space_size=image_enc_attention_dim,
+        num_lstm_units=image_enc_hidden_dim,
         num_hidden_layers=2,
         l2_scale=config.l2_scale,
         dropout=config.dropout,
         concat_context=config.concat_context,
         layernorm=config.layernorm,
         mode=mode,
-    )
+        use_attention_pooling=self._use_attn_pooling)
 
     # Learnable projection of initial decoder state from instruction encoder.
     self._project_decoder_input_states = (
@@ -209,8 +220,8 @@ class DiscriminatorAgent(base_agent.BaseAgent):
         lambda: tf.boolean_mask(raw_text_feature, last_true),
         lambda: raw_text_feature[:, 0, :, :])
     tf.debugging.assert_equal(text_feature, text_feature_last_true)
-    # visual_feature = tf.nn.l2_normalize(visual_feature, axis=2)
-    # text_feature = tf.nn.l2_normalize(text_feature, axis=2)
+    visual_feature = tf.nn.l2_normalize(visual_feature, axis=2)
+    text_feature = tf.nn.l2_normalize(text_feature, axis=2)
 
     # <tf.float32>[batch_size, time, num_tokens]
     alpha_i_j = tf.matmul(visual_feature,
@@ -271,12 +282,12 @@ class DiscriminatorAgentV2(DiscriminatorAgent):
   the parent class.
   """
 
-  def __init__(self, config, mode=None):
+  def __init__(self, config, mode=None, name='discriminator_v2'):
     """Initializes Discriminator Agent."""
     # Initializes self._instruction_encoder, self._image_encoder, decoder input
     # projection (optional), and the affine layer for similarity.
     super(DiscriminatorAgentV2, self).__init__(
-        config, mode=mode, name='discriminator_v2')
+        config, mode=mode, name=name)
     # If set, average image output from all steps, else only use the last step.
     self._average_image_states_of_all_steps = (
         config.average_image_states_of_all_steps if hasattr(

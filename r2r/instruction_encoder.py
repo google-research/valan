@@ -19,7 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 from absl import flags
-
+from absl import logging
 import numpy as np
 
 import tensorflow.compat.v2 as tf
@@ -41,14 +41,21 @@ class InstructionEncoder(tf.keras.Model):
                dropout=0.0,
                layernorm=False,
                mode=None,
+               use_bert_embeddings=False,
                name=None):
     super(InstructionEncoder,
           self).__init__(name=name if name else 'ins_encoder')
     self._l2_scale = l2_scale
-    self._word_embeddings = self._get_embedding_layer(pretrained_embed_path,
-                                                      oov_bucket_size,
-                                                      vocab_size,
-                                                      word_embed_dim)
+    self._use_bert_embeddings = use_bert_embeddings
+    if self._use_bert_embeddings:
+      self._input_projection = tf.keras.layers.Dense(
+          output_dim, name='bert_emb_projection')
+      logging.info('Instruction Encoder uses Bert embeddings.')
+    else:
+      self._word_embeddings = self._get_embedding_layer(pretrained_embed_path,
+                                                        oov_bucket_size,
+                                                        vocab_size,
+                                                        word_embed_dim)
     self._bi_lstm = self._get_bi_lstm_encoder(num_hidden_layers, output_dim)
     # Input dropout and layernorm layers.
     self._use_layernorm = layernorm
@@ -104,17 +111,6 @@ class InstructionEncoder(tf.keras.Model):
         mask_zero=True,
         name='embedding')
 
-  def get_embeddings(self, ids):
-    """Compute word embeddings.
-
-    Args:
-      ids: A tensor of type int64.
-
-    Returns:
-      A tensor of type int64 and the shape should be [ids.shape, embedding_dim].
-    """
-    return self._word_embeddings(ids)
-
   def _get_bi_lstm_encoder(self, num_hidden_layers, hidden_dim):
     """Get Bi-LSTM encoder.
 
@@ -146,7 +142,8 @@ class InstructionEncoder(tf.keras.Model):
 
     Args:
       input_tensor: tf.int64 tensor with shape [batch_size, max_seq_length]
-        padded with some pad token id.
+        padded with some pad token id. If `use_bert_emb`, then tf.float32 tensor
+        of shape [batch_size, max_seq_length, embedding_dim].
 
     Returns:
       A tuple<output, states>.
@@ -156,8 +153,12 @@ class InstructionEncoder(tf.keras.Model):
         a (state_c, state_h) tuple. This is concatenated last forward and
         backward states of each LSTM layer.
     """
-    # tf.float32 [batch_size, max_seq_length, word_embedding_dim]
-    embedding = self._word_embeddings(input_tensor)
+    if self._use_bert_embeddings:
+      tf.debugging.assert_rank(input_tensor, 3)
+      embedding = self._input_projection(input_tensor)
+    else:
+      # tf.float32 [batch_size, max_seq_length, word_embedding_dim]
+      embedding = self._word_embeddings(input_tensor)
 
     # Input dropout and layernorm.
     embedding = self._input_dropout(embedding, training=self._is_training)

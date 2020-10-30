@@ -1,7 +1,6 @@
 # Code for R2R based on Matterport3D environment.
 
-load("//devtools/python/blaze:python3.bzl", "py2and3_strict_test")
-load("//devtools/python/blaze:pytype.bzl", "pytype_strict_library")
+load("//devtools/python/blaze:pytype.bzl", "pytype_strict_binary", "pytype_strict_library")
 load("//devtools/python/blaze:strict.bzl", "py_strict_test")
 
 licenses(["notice"])
@@ -41,10 +40,12 @@ pytype_strict_library(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "language_reward_net_test",
     srcs = ["language_reward_net_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":constants",
         ":env",
@@ -69,6 +70,7 @@ pytype_strict_library(
     deps = [
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/flags",
+        "@absl_py//absl/logging",
     ],
 )
 
@@ -89,6 +91,8 @@ pytype_strict_library(
         "//third_party/py/tensorflow_probability",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:problem_type",
+        "//third_party/py/valan/r2r/multi_task:mt_agent",
+        "//third_party/py/valan/r2r/multi_task:mt_agent_config",
     ],
 )
 
@@ -148,6 +152,8 @@ pytype_strict_library(
         "//third_party/py/tensorflow_probability",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:problem_type",
+        "//third_party/py/valan/r2r/multi_task:mt_agent",
+        "//third_party/py/valan/r2r/multi_task:mt_agent_config",
     ],
 )
 
@@ -275,7 +281,6 @@ pytype_strict_library(
         ":image_encoder",
         ":instruction_encoder",
         "//tensorflow:tensorflow_py",
-        "//third_party/py/ipdb",
         "//third_party/py/valan/framework:base_agent",
         "//third_party/py/valan/framework:common",
         "//third_party/py/valan/framework:utils",
@@ -305,10 +310,12 @@ filegroup(
     srcs = glob(["testdata/**"]),
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "agent_test",
     srcs = ["agent_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":agent",
         ":agent_config",
@@ -323,10 +330,12 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "curriculum_env_test",
     srcs = ["curriculum_env_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":constants",
         ":curriculum_env",
@@ -337,25 +346,28 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "image_encoder_test",
     srcs = ["image_encoder_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":image_encoder",
         "//tensorflow:tensorflow_py",
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "instruction_encoder_test",
     srcs = ["instruction_encoder_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":instruction_encoder",
         "//tensorflow:tensorflow_py",
     ],
 )
 
-# py2and3_strict_test(
 py_strict_test(
     name = "env_test",
     srcs = ["env_test.py"],
@@ -375,10 +387,12 @@ py_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "eval_metric_test",
     srcs = ["eval_metric_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":constants",
         ":env",
@@ -391,10 +405,12 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "env_ndh_test",
     srcs = ["env_ndh_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":constants",
         ":env_ndh",
@@ -407,10 +423,12 @@ py2and3_strict_test(
     ],
 )
 
-py2and3_strict_test(
+py_strict_test(
     name = "house_parser_test",
     srcs = ["house_parser_test.py"],
     data = [":test_data"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":house_parser",
         ":house_utils",
@@ -462,5 +480,55 @@ py_strict_test(
         "//third_party/py/valan/framework:utils",
         "@absl_py//absl/flags",
         "@absl_py//absl/testing:parameterized",
+    ],
+)
+
+pytype_strict_binary(
+    name = "eval_aggregator_main",
+    srcs = ["eval_aggregator_main.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        "//third_party/py/absl:app",
+        "//third_party/py/valan/framework:eval_aggregator",
+        "//third_party/py/valan/framework:hyperparam_flags",
+        "@absl_py//absl/flags",
+    ],
+)
+
+pytype_strict_binary(
+    name = "actor_main",
+    srcs = ["actor_main.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":ndh_problem",
+        ":r2r_problem",
+        "//third_party/py/absl:app",
+        "//third_party/py/valan/framework:actor",
+        "//third_party/py/valan/framework:common",
+        "//third_party/py/valan/framework:eval_actor",
+        "//third_party/py/valan/framework:hyperparam_flags",
+        "//third_party/py/valan/r2r/multi_task:mt_problem",
+        "@absl_py//absl/flags",
+        "@absl_py//absl/logging",
+    ],
+)
+
+pytype_strict_binary(
+    name = "learner_main",
+    srcs = ["learner_main.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":ndh_problem",
+        ":r2r_problem",
+        "//third_party/py/absl:app",
+        "//third_party/py/valan/framework:common",
+        "//third_party/py/valan/framework:hyperparam_flags",
+        "//third_party/py/valan/framework:learner",
+        "//third_party/py/valan/r2r/multi_task:mt_problem",
+        "@absl_py//absl/flags",
+        "@absl_py//absl/logging",
     ],
 )

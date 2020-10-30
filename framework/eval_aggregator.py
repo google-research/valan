@@ -24,17 +24,13 @@ import os
 import pickle
 import random
 
-from absl import flags
 from absl import logging
 import numpy as np
 from seed_rl import grpc
 from six.moves import queue as py_queue
 import tensorflow.compat.v2 as tf
-from valan.framework import actor_config  
-from valan.framework import common  
-from valan.framework import learner_config  
+from valan.framework import common
 
-FLAGS = flags.FLAGS
 
 StepSummaries = collections.namedtuple('StepSummaries',
                                        ('step', 'count', 'metrics_sum'))
@@ -77,7 +73,7 @@ def run_with_address(listen_address, hparams):
     tf.py_function(lambda x: eval_queue.put(pickle.loads(x.numpy())), [x], [])
     return []
 
-  server.bind(eval_enqueue, batched=False)
+  server.bind(eval_enqueue)
 
   logging.info('Starting gRPC server')
   server.start()
@@ -175,13 +171,16 @@ def run_with_address(listen_address, hparams):
               step=step, count=1, metrics_sum=copy.copy(episode_metrics_dict))
 
 
-def run(aggregator_prefix='default'):
+def run(
+    aggregator_prefix: str = 'default',
+    logdir: str = '/tmp/agent/',
+    server_address: str = 'unix:/tmp/foo',
+):
   """Run the eval_aggregator."""
   tf.enable_v2_behavior()
   hparams = {}
-  logdir = FLAGS.logdir
   if aggregator_prefix:
     logdir = os.path.join(logdir, aggregator_prefix)
   hparams['logdir'] = logdir
   hparams['num_samples'] = -1
-  run_with_address(FLAGS.server_address, hparams)
+  run_with_address(server_address, hparams)
