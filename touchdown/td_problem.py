@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import collections
@@ -141,11 +141,14 @@ class TouchdownProblem(problem_type.ProblemType):
       # In non-train modes, choose greedily.
       action_idx = tf.argmax(agent_output.policy_logits, axis=-1)
 
-    # Return ActorAction and the action to be passed to the env step function.
+    # Return ActorAction with the action to be passed to the env step function.
+    policy_logprob = tf.nn.log_softmax(agent_output.policy_logits)
     return common.ActorAction(
         chosen_action_idx=int(action_idx.numpy()),
         oracle_next_action_idx=int(
-            oracle_next_action.numpy())), action_idx.numpy()
+            oracle_next_action.numpy()),
+        action_val=action_idx.numpy(),
+        log_prob=float(policy_logprob[action_idx].numpy()))
 
   def does_use_panoramic_actions(self):
     return self._env_config.panoramic_action_space

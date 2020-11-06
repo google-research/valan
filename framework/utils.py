@@ -333,6 +333,31 @@ def assert_shape(expected_shape, actual_shape):
           expected_shape, actual_shape))
 
 
+def transpose_batch_time(x):
+  """Transposes the batch and time dimensions of a Tensor.
+
+  If the input tensor has rank < 2 it returns the original tensor. Retains as
+  much of the static shape information as possible.
+
+  Args:
+    x: A Tensor.
+
+  Returns:
+    x transposed along the first two dimensions.
+  """
+  x_static_shape = x.shape
+  rank = x_static_shape.rank
+  if rank is not None and rank < 2:
+    return x
+
+  x_t = tf.transpose(a=x, perm=tf.concat(([1, 0], tf.range(2, rank)), axis=0))
+  x_t.set_shape(
+      tf.TensorShape(
+          [x_static_shape.dims[1].value,
+           x_static_shape.dims[0].value]).concatenate(x_static_shape[2:]))
+  return x_t
+
+
 class WallTimer(object):
   """Collect the duration of an operation using Python's 'with' statement."""
 

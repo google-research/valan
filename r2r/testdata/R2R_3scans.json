@@ -1,0 +1,212 @@
+[
+  {
+    "distance": 5.32,
+    "scan": "gZ6f7yhEvPG",
+    "path_id": 1304,
+    "path": [
+      "80929af5cf234ae38ac3a2a4e60e4342",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "46cecea0b30e4786b673f5e951bf82d4"
+    ],
+    "heading": 6.101,
+    "instructions": [
+      "Walk forward to the padded benches. Turn right and walk between them. Wait near the first pillow on the left, close to the altar. ",
+      "Take a right down the lane through the two sets of pews, walk towards the left corner of the church and stop at the one step. ",
+      "Walk around the pews and towards the front of the room with the paintings of religious figures and a stage area. "
+    ]
+  },
+  {
+    "distance": 5.35,
+    "scan": "gZ6f7yhEvPG",
+    "path_id": 318,
+    "path": [
+      "29b20fa80dcd4771974303c1ccd8953f",
+      "ba27da20782d4e1a825f0a133ad84da9",
+      "47d8a8282c1c4a7fb3eeeacc45e9d959",
+      "0ee20663dfa34b438d48750ddcd7366c"
+    ],
+    "heading": 5.01,
+    "instructions": [
+      "Walk towards the benches and up the aisle down the middle. At the end of the aisle take a right and stop in front of the cabinet. ",
+      "Walk up the aisle and wait to the left of the altar. ",
+      "go towards the middle of the aisle. Take a left and go to the front of the room at the end of the aisle. Take a left and stop in front of the small piece of furniture and painting. "
+    ]
+  },
+  {
+    "distance": 11.7,
+    "scan": "YmJkqBEsHnH",
+    "path_id": 1157,
+    "path": [
+      "20fd759be0b64fc9aa96d290f0a704ec",
+      "8e38fdd81c7949db9646968bafbbdcfc",
+      "006933a75f764c5485cf284bea0ded0b",
+      "d841f7b710f9470796d55561f8f524db",
+      "01c80b5f8fbd4c969ee0bc03f1ec7a6c",
+      "82ea5baa30f945fe98f6cad3064af847",
+      "d471e89e00be49f49a7ecace814d60bf"
+    ],
+    "heading": 4.942,
+    "instructions": [
+      "Walk past pews. Wait at floral arrangement. ",
+      "Turn around and walk to the beginning of the aisle. Stand ahead of the pews in the canter. ",
+      "Go into the church and walk straight down the aisle. Stop once you pass the first set of pews. "
+    ]
+  },
+  {
+    "distance": 5.36,
+    "scan": "YmJkqBEsHnH",
+    "path_id": 884,
+    "path": [
+      "d841f7b710f9470796d55561f8f524db",
+      "01c80b5f8fbd4c969ee0bc03f1ec7a6c",
+      "82ea5baa30f945fe98f6cad3064af847",
+      "d471e89e00be49f49a7ecace814d60bf"
+    ],
+    "heading": 4.986,
+    "instructions": [
+      "Go down the asleep of the chruch towards the front.  Stop and wait after passing all of the pews. ",
+      "Turn of  around and walk straight down the aisle until you reach the first set of pews. Stand ahead of them in the center. ",
+      "Walk past pews and wait in front of potted flowers. "
+    ]
+  },
+  {
+    "distance": 5.63,
+    "scan": "YmJkqBEsHnH",
+    "path_id": 4260,
+    "path": [
+      "006933a75f764c5485cf284bea0ded0b",
+      "d841f7b710f9470796d55561f8f524db",
+      "01c80b5f8fbd4c969ee0bc03f1ec7a6c",
+      "82ea5baa30f945fe98f6cad3064af847"
+    ],
+    "heading": 4.925,
+    "instructions": [
+      "Go down the aisle of the church through the Nave towards the altar.  Stop between the second row of pews to the front. Wait there. ",
+      "Walk to the front of the church aisle and stop when you get to the row of the second pews from the front. ",
+      "Walk down the aisle toward the front.  Wait at the second row of pews. "
+    ]
+  },
+  {
+    "distance": 7.7,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 1118,
+    "path": [
+      "ef638e508e054c4aabd49b38d1b88fc7",
+      "8dba9ff900b14f9b84ead660f5f7f701",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "aebb1de49d21485e8bef7633dfb58761",
+      "565cc21cd28b4ee6bb5ba83c5270c032"
+    ],
+    "heading": 1.488,
+    "instructions": [
+      "Exit the bathroom through the doorway and turn left. Walk on the carpet toward the bed. Turn left on the hardwood flooring and wait by the kitchen sink. ",
+      "exit bathroom and turn left, pass wall and turn left again, stop at sink. ",
+      "Turn right and exit the bathroom. Turn left and walk towards the bed. Turn left again and wait by the kitchen sink. "
+    ]
+  },
+  {
+    "distance": 6.11,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 4309,
+    "path": [
+      "0d8c5fbfd73f44e28d6da370520611e4",
+      "565cc21cd28b4ee6bb5ba83c5270c032",
+      "aebb1de49d21485e8bef7633dfb58761",
+      "86d342c576ff46a9828d2ba377cc8cd5"
+    ],
+    "heading": 1.494,
+    "instructions": [
+      "Walk past the refrigerator and stop on the rug by the beanbag chair. ",
+      "Walk forward past the kitchen, then turn right and wait near the window. ",
+      "Walk through the kitchen and take a right after the refrigerator. Stop on the rug under the mirror. "
+    ]
+  },
+  {
+    "distance": 8.58,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 44,
+    "path": [
+      "0d8c5fbfd73f44e28d6da370520611e4",
+      "565cc21cd28b4ee6bb5ba83c5270c032",
+      "aebb1de49d21485e8bef7633dfb58761",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "97ed68de989e44fdaf2d9b949898fab6"
+    ],
+    "heading": 1.494,
+    "instructions": [
+      "Walk across the kitchen and turn right past the refrigerator. Go forward, enter  the door on your right, and walk into the restroom. ",
+      "Walk past the refrigerator and turn right.  Walk around the corner and turn right, facing the bathroom.  Walk to the entrance to the bathroom and stop. ",
+      "Walk to the mirror on the side of the wall, near the door. Enter the bathroom. "
+    ]
+  },
+   {
+    "distance": 5.22,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 2705,
+    "path": [
+      "5fd70cff4992429a99a84fd3c117ccb5",
+      "86d342c576ff46a9828d2ba377cc8cd5",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "97ed68de989e44fdaf2d9b949898fab6"
+    ],
+    "heading": 4.658,
+    "instructions": [
+      "Turn slightly left and go into the bathroom. Wait by the weird looking toilet. ",
+      "Go and stop in the bathroom doorway. ",
+      "Leave the bedroom through the right, enter the bathroom, and wait. "
+    ]
+  },
+  {
+    "distance": 7.59,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 6398,
+    "path": [
+      "1db1c0a09ecf40d188197efc05ced3bb",
+      "97ed68de989e44fdaf2d9b949898fab6",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "86d342c576ff46a9828d2ba377cc8cd5",
+      "6178647ca8d14dc09370f6c1b7ed2fd6"
+    ],
+    "heading": 2.029,
+    "instructions": [
+      "Go out of the bathroom go over to the dining room table and wait in front of the fireplace. ",
+      "Walk straight down the hallway and turn left.  Walk to the left of the blue bed and stop between the bed and the table and chairs, in front of the llama painting. ",
+      "Walk out of the room and left around the corner. walk to the left side of the bed and stop. "
+    ]
+  },
+  {
+    "distance": 6.91,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 6633,
+    "path": [
+      "6178647ca8d14dc09370f6c1b7ed2fd6",
+      "86d342c576ff46a9828d2ba377cc8cd5",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "97ed68de989e44fdaf2d9b949898fab6"
+    ],
+    "heading": 2.626,
+    "instructions": [
+      "Go past the refrigerator. Follow the left wall and wait in the doorway for the restroom. ",
+      "Turn to face the white refrigerator to the left of the kitchen sink.  Walk towards the fridge, and go to the blue carpet that is to the left of the fridge.  Once you reach the carpet follow the curved wall down the hallway until you reach the doorway to the bathroom.  Walk until you are standing in the doorway facing the toilet. ",
+      "Walk past the fridge and turn right. Walk toward the wall and turn right. Walk down the short hallway and stop in the doorway. "
+    ]
+  },
+  {
+    "distance": 5.03,
+    "scan": "GdvgFV5R1Z5",
+    "path_id": 6327,
+    "path": [
+      "1db1c0a09ecf40d188197efc05ced3bb",
+      "97ed68de989e44fdaf2d9b949898fab6",
+      "0b02e18654324edd8d74c078b66bfb20",
+      "aebb1de49d21485e8bef7633dfb58761"
+    ],
+    "heading": 2.029,
+    "instructions": [
+      "Leave the bathroom and move towards the bed. Stop in the center of the wood floor next to the refrigerator. ",
+      "Follow the hall to the living area and turn left. Wait near the refrigerator. ",
+      "Leave the bathroom and go straight. Turn left and stop at the foot of the bed next to the chair. "
+    ]
+  }
+]

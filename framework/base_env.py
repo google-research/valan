@@ -77,6 +77,27 @@ class BaseEnv(object):
           observation=self._reset().observation)
     return self._current_env_output
 
+  def get_state(self):
+    """Returns an object to be used in conjunction with set_state.
+
+    Returns:
+      An object containing sufficient context to restore the current
+      environment state later in the same episode.
+    """
+    return self._current_env_output
+
+  def set_state(self, state):
+    """Restore a previous state from the same episode, to support planning.
+
+    Note that set_state and get_state are not expected to work across episodes
+    (e.g., after reset). Subclasses should override get_stage and set_stage if
+    there is additional state that needs to be restored, e.g. path history.
+
+    Args:
+      state: An object returned by get_state.
+    """
+    self._current_env_output = state
+
   @abc.abstractmethod
   def _step(self, action):
     """Updates and returns the internal state after taking the action.

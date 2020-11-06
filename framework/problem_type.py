@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import abc
@@ -124,14 +124,15 @@ class ProblemType(object):
         current step which contains policy_logits.
 
     Returns:
-      A 2-tuple:
-        actor_action: An instance of `ActorAction` that has:
-          chosen_action_idx: int32 index of the action chosen. The index is
-            expected to be in range [0, agent_output.policy_logits.shape[-1]).
-          oracle_next_action_idx: int32 index of the oracle action. The index is
-            expected to be in range [0, agent_output.policy_logits.shape[-1]).
+      actor_action: An instance of `ActorAction` that has:
+        chosen_action_idx: int32 index of the action chosen. The index is
+          expected to be in range [0, agent_output.policy_logits.shape[-1]).
+        oracle_next_action_idx: int32 index of the oracle action. The index is
+          expected to be in range [0, agent_output.policy_logits.shape[-1]).
         action_val: An int representing raw action that is then accepted by
           `step` method of environment.
+        log_prob: A float representing the log-probability of the action under
+          the agent's policy, if appropriate.
     """
 
   @abc.abstractmethod

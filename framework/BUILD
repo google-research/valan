@@ -71,7 +71,6 @@ py_library(
         ":problem_type",
         ":utils",
         "//tensorflow:tensorflow_py",
-        "//tensorflow/contrib/rnn:rnn_py",
         "//tensorflow/cc/seed_rl/grpc",
         "//third_party/py/typing",
         "@absl_py//absl/flags",
@@ -100,7 +99,6 @@ py_library(
     name = "utils",
     srcs = ["utils.py"],
     deps = [
-        "//pyglib:gfile",
         "//tensorflow:tensorflow_py",
         "@absl_py//absl/logging",
     ],
@@ -121,7 +119,6 @@ py_library(
         ":utils",
         ":vtrace",
         "//tensorflow:tensorflow_py",
-        "//tensorflow/contrib/rnn:rnn_py",
         "@absl_py//absl/flags",
     ],
 )
@@ -211,6 +208,7 @@ py_library(
 py_library(
     name = "learner_config",
     srcs = ["learner_config.py"],
+    srcs_version = "PY2AND3",
     deps = ["@absl_py//absl/flags"],
 )
 

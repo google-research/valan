@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 from absl import flags
@@ -25,8 +25,6 @@ from valan.framework import common
 from valan.framework import utils
 from valan.framework import vtrace
 from valan.framework.focal_loss import focal_loss_from_logits
-
-from tensorflow.contrib import rnn
 
 FLAGS = flags.FLAGS
 
@@ -370,7 +368,7 @@ def compute_loss(study_loss_types, current_batch_loss_type, agent, agent_state,
   # All the losses are time-major tensors, i.e., of shape [num_timesteps - 1,
   # batch_size]. Convert to batch-major and then choose which loss to apply to
   # each row.
-  losses_dict = tf.nest.map_structure(rnn.transpose_batch_time, losses_dict)
+  losses_dict = tf.nest.map_structure(utils.transpose_batch_time, losses_dict)
   loss = tf.reduce_mean(
       utils.gather_from_dict(losses_dict, current_batch_loss_type))
   # Total loss including regularizer losses.

@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 from valan.framework import hparam
@@ -24,7 +24,7 @@ from valan.framework import hparam
 R2R_AGENT_CONFIG = {
     'pretrained_embed_path': '',
     'oov_bucket_size': 1,
-    'vocab_size': 1082,
+    'vocab_size': 1082,  # Set this according to the vocab file.
     'word_embed_dim': 300,
     'l2_scale': 0.0,
     'dropout': 0.0,

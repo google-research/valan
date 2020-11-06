@@ -21,7 +21,7 @@ To use the actor, create the appropriate problem_type and call the `run` method.
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import pickle
@@ -107,7 +107,9 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
       env_output, agent_output)
   actor_action = common.ActorAction(
       chosen_action_idx=tf.zeros([], dtype=tf.int32),
-      oracle_next_action_idx=tf.zeros([], dtype=tf.int32))
+      oracle_next_action_idx=tf.zeros([], dtype=tf.int32),
+      action_val=tf.zeros([], dtype=tf.int32),
+      log_prob=tf.zeros([], dtype=tf.float32))
   # Remove batch_dim from returned agent's initial state.
   initial_agent_state = tf.nest.map_structure(lambda t: tf.squeeze(t, 0),
                                               initial_agent_state)
@@ -173,10 +175,9 @@ def run_with_learner(problem_type: framework_problem_type.ProblemType,
       env_output, agent_output = utils.remove_time_batch_dim(
           env_output, agent_output)
 
-      actor_action, action_val = problem_type.select_actor_action(
-          env_output, agent_output)
+      actor_action = problem_type.select_actor_action(env_output, agent_output)
 
-      env_output = env.step(action_val)
+      env_output = env.step(actor_action.action_val)
 
       env_outputs.append(env_output)
       agent_outputs.append(agent_output)

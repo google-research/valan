@@ -22,12 +22,12 @@ from valan.r2r import constants
 
 DEFAULT_ENV_CONFIG = {
     # Base dir for scan data, eg., `scans`, `connections`.
-    'scan_base_dir': '',
+    'scan_base_dir': '/tmp/valan/testdata/',  # Example for testing.
     # Base dir for input JSON and vocab files.
-    'data_base_dir': '',
+    'data_base_dir': '/tmp/valan/testdata/',  # Example for testing.
     # Base dir for vocab.
-    'vocab_dir': '',
-    'vocab_file': 'trainval_vocab.txt',
+    'vocab_dir': '/tmp/valan/testdata/',  # Example for testing.
+    'vocab_file': 'vocab.txt',
     # Number of image pathes for each panorama, typically 36.
     'images_per_pano': 36,
     'max_conns': 14,
@@ -38,7 +38,7 @@ DEFAULT_ENV_CONFIG = {
     # Field of View used to generate image features.
     'fov': 0.17,
     # Dir containing pre-generated image features.
-    'image_features_dir': '',
+    'image_features_dir': '/tmp/valan/testdata/image_features_efficientnet/',
     # Image feature dimension size. 1792 for EfficientNet B4.
     'image_encoding_dim': 1792,
     # Direction encoding dimension size.

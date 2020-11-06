@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import collections
@@ -127,8 +127,9 @@ class DiscriminatorProblem(problem_type.ProblemType):
     unused_action_idx = tf.cast(tf.reduce_min(unused_action_idx), tf.int32)
     return common.ActorAction(
         chosen_action_idx=unused_action_idx.numpy(),
-        oracle_next_action_idx=unused_action_idx.numpy()), int(
-            next_golden_pano_id)
+        oracle_next_action_idx=unused_action_idx.numpy(),
+        action_val=int(next_golden_pano_id),
+        log_prob=0)
 
   def eval(self, action_list, env_output_list, agent_output=None):
     result = {}

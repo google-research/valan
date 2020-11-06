@@ -249,6 +249,20 @@ class R2REnv(base_env.BaseEnv):
   def get_scan_graph(self, scan_id):
     return self._scan_info[scan_id].graph
 
+  def get_state(self):
+    """Return an object to be used in conjunction with set_state."""
+    # R2REnv stores path_history separately, so it must be restorable too.
+    return (self._path_history[:], self._current_env_output)
+
+  def set_state(self, state):
+    """Restore a previous state from the same episode.
+
+    Args:
+      state: An object returned by get_state.
+    """
+    self._path_history = state[0]
+    self._current_env_output = state[1]
+
   def _get_current_observation(self, pano_id, scan_id, time_step):
     heading, pitch = self._get_heading_pitch(pano_id, scan_id, time_step)
     direction_repeats = self._env_config.direction_encoding_dim // 8

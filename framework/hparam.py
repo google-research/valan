@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-"""Copying necessary hparam code to avoid pulling in tf.contrib."""
+"""Class for hyperparameters."""
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import six
@@ -43,8 +42,8 @@ class HParams(object):
     # Define 3 hyperparameters: 'learning_rate' is a float parameter,
     # 'num_hidden_units' an integer parameter, and 'activation' a string
     # parameter.
-    hparams = tf.contrib.training.HParams(
-        learning_rate=0.1, num_hidden_units=100, activation='relu')
+    hparams = HParams(learning_rate=0.1, num_hidden_units=100,
+                      activation='relu')
 
     hparams.activation ==> 'relu'
     ```

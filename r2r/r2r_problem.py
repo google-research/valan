@@ -16,17 +16,20 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import collections
+import operator
 import pickle
+from absl import logging
 
 import numpy as np
 import tensorflow.compat.v2 as tf
 import tensorflow_probability as tfp
 from valan.framework import common
 from valan.framework import problem_type
+from valan.framework import utils
 from valan.r2r import agent
 from valan.r2r import agent_config
 from valan.r2r import constants
@@ -188,10 +191,120 @@ class R2RProblem(problem_type.ProblemType):
       # In non-train modes, choose greedily.
       action_idx = tf.argmax(agent_output.policy_logits, axis=-1)
     action_val = env_output.observation[constants.CONN_IDS][action_idx]
+    policy_logprob = tf.nn.log_softmax(agent_output.policy_logits)
     return common.ActorAction(
         chosen_action_idx=int(action_idx.numpy()),
-        oracle_next_action_idx=int(oracle_next_action_idx.numpy())), int(
-            action_val.numpy())
+        oracle_next_action_idx=int(oracle_next_action_idx.numpy()),
+        action_val=int(action_val.numpy()),
+        log_prob=float(policy_logprob[action_idx].numpy()))
+
+  def plan_actor_action(self, agent_output, agent_state, agent_instance,
+                        env_output, env_instance, beam_size, planning_horizon,
+                        temperature=1.0):
+
+    initial_env_state = env_instance.get_state()
+    initial_time_step = env_output.observation[constants.TIME_STEP]
+    beam = [common.PlanningState(score=0,
+                                 agent_output=agent_output,
+                                 agent_state=agent_state,
+                                 env_output=env_output,
+                                 env_state=initial_env_state,
+                                 action_history=[])]
+    planning_step = 1
+    while True:
+      next_beam = []
+      for state in beam:
+        if state.action_history and (state.action_history[-1].action_val
+                                     == constants.STOP_NODE_ID):
+          # Path is done. This won't be reflected in env_output.done since
+          # stop actions are not performed during planning.
+          next_beam.append(state)
+          continue
+        # Find the beam_size best next actions based on policy log probability.
+        num_actions = tf.math.count_nonzero(state.env_output.observation[
+            constants.CONN_IDS] >= constants.STOP_NODE_ID).numpy()
+        policy_logprob = tf.nn.log_softmax(
+            state.agent_output.policy_logits / temperature)
+        logprob, ix = tf.math.top_k(
+            policy_logprob, k=min(num_actions, beam_size))
+        action_vals = tf.gather(
+            state.env_output.observation[constants.CONN_IDS], ix)
+        oracle_action = state.env_output.observation[
+            constants.ORACLE_NEXT_ACTION]
+        oracle_action_indices = tf.where(
+            tf.equal(state.env_output.observation[constants.CONN_IDS],
+                     oracle_action))
+        oracle_action_idx = tf.reduce_min(oracle_action_indices)
+
+        # Expand each action and add to the beam for the next iteration.
+        for j, action_val in enumerate(action_vals.numpy()):
+          next_action = common.ActorAction(
+              chosen_action_idx=int(ix[j].numpy()),
+              oracle_next_action_idx=int(oracle_action_idx.numpy()),
+              action_val=int(action_val),
+              log_prob=float(logprob[j].numpy()))
+          if action_val == constants.STOP_NODE_ID:
+            # Don't perform stop actions which trigger a new episode that can't
+            # be reset using set_state.
+            next_state = common.PlanningState(
+                score=state.score + logprob[j],
+                agent_output=state.agent_output,
+                agent_state=state.agent_state,
+                env_output=state.env_output,
+                env_state=state.env_state,
+                action_history=state.action_history + [next_action])
+          else:
+            # Perform the non-stop action.
+            env_instance.set_state(state.env_state)
+            next_env_output = env_instance.step(action_val)
+            next_env_output = utils.add_time_batch_dim(next_env_output)
+            next_agent_output, next_agent_state = agent_instance(
+                next_env_output, state.agent_state)
+            next_env_output, next_agent_output = utils.remove_time_batch_dim(
+                next_env_output, next_agent_output)
+            next_state = common.PlanningState(
+                score=state.score + logprob[j],
+                agent_output=next_agent_output,
+                agent_state=next_agent_state,
+                env_output=next_env_output,
+                env_state=env_instance.get_state(),
+                action_history=state.action_history + [next_action])
+          next_beam.append(next_state)
+
+      def _log_beam(beam):
+        for item in beam:
+          path_string = '\t'.join(
+              [str(a.action_val) for a in item.action_history])
+          score_string = '\t'.join(
+              ['%.4f' % a.log_prob for a in item.action_history])
+          logging.debug('Score:    %.4f', item.score)
+          logging.debug('Log prob: %s', score_string)
+          logging.debug('Steps:    %s', path_string)
+
+      # Reduce the next beam to only the top beam_size paths.
+      beam = sorted(next_beam, reverse=True, key=operator.attrgetter('score'))
+      beam = beam[:beam_size]
+      logging.debug('Planning step %d', planning_step)
+      _log_beam(beam)
+
+      # Break if all episodes are done.
+      if all(item.action_history[-1].action_val == constants.STOP_NODE_ID
+             for item in beam):
+        break
+
+      # Break if exceeded planning_horizon.
+      if planning_step >= planning_horizon:
+        break
+
+      # Break if we are planning beyond the max actions per episode, since this
+      # will also trigger a new episode (same as the stop action).
+      if initial_time_step + planning_step >= env_instance._max_actions_per_episode:  
+        break
+      planning_step += 1
+
+    # Restore the environment to it's initial state so the agent can still act.
+    env_instance.set_state(initial_env_state)
+    return beam[0].action_history
 
   def eval(self, action_list, env_output_list):
     result = {}

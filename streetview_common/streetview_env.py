@@ -24,7 +24,7 @@ angles -180 + i*360/K (0 <= i <= K-1), and K-th bin indicates the stop action.
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import collections

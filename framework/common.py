@@ -47,8 +47,11 @@ RuntimeConfig = collections.namedtuple("RuntimeConfig",
 #     current timestep.
 #   oracle_next_action_idx: An int32 specifying the index of the action at the
 #     next timestep that oracle would have chosen.
+#   action_val: An int32 specifying the pano id of the chosen action.
+#   log_prob: Float specifying the policy log-probability of the chosen action.
 ActorAction = collections.namedtuple(
-    "ActorAction", ["chosen_action_idx", "oracle_next_action_idx"])
+    "ActorAction", ["chosen_action_idx", "oracle_next_action_idx", "action_val",
+                    "log_prob"])
 
 # Tuple containing output of the actor which is then read by learner.
 #  initial_agent_state: a tensor containing previous episode's final agent
@@ -71,6 +74,18 @@ ActorOutput = collections.namedtuple("ActorOutput", [
 # Tuple contaiming information for aggregator summaries.
 StepSummaries = collections.namedtuple("StepSummaries",
                                        ("step", "count", "metrics_sum"))
+
+# Tuple containing agent and environment state, for use in planning.
+#  score: a scalar float for comparing the value of planning states.
+#  agent_output: A `AgentOutput` tuple.
+#  agent_state: A tensor containing the agent state. This tensor doesn't have
+#    time or batch dimension.
+#  env_output: A `EnvOutput` tuple.
+#  env_state: An object containing the environment state from get_state.
+#  action_history: A list with an `ActorAction` for each step in the episode.
+PlanningState = collections.namedtuple("PlanningState", [
+    "score", "agent_output", "agent_state", "env_output", "env_state",
+    "action_history"])
 
 # Different loss types supported in the framework.
 # actor-critic loss

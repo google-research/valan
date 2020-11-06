@@ -113,10 +113,12 @@ class MTProblem(problem_type.ProblemType):
     else:
       raise ValueError('Unsupported loss type {}'.format(self._loss_type))
     action_val = env_output.observation[constants.CONN_IDS][action_idx]
+    policy_logprob = tf.nn.log_softmax(agent_output.policy_logits)
     return common.ActorAction(
         chosen_action_idx=int(action_idx.numpy()),
-        oracle_next_action_idx=int(oracle_next_action_idx.numpy())), int(
-            action_val.numpy())
+        oracle_next_action_idx=int(oracle_next_action_idx.numpy()),
+        action_val=int(action_val.numpy()),
+        log_prob=float(policy_logprob[action_idx].numpy()))
 
   def eval(self, action_list, env_output_list):
     # Shouldn't be called.

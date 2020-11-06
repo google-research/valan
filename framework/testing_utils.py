@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import numpy as np
@@ -154,7 +154,11 @@ class MockProblem(problem_type.ProblemType):
             chosen_action_idx=tf.TensorSpec(
                 shape=[unroll_length + 1], dtype=tf.int32),
             oracle_next_action_idx=tf.TensorSpec(
-                shape=[unroll_length + 1], dtype=tf.int32)),
+                shape=[unroll_length + 1], dtype=tf.int32),
+            action_val=tf.TensorSpec(
+                shape=[unroll_length + 1], dtype=tf.int32),
+            log_prob=tf.TensorSpec(
+                shape=[unroll_length + 1], dtype=tf.float32)),
         loss_type=tf.TensorSpec(shape=[], dtype=tf.int32),
         info=tf.TensorSpec(shape=[], dtype=tf.string),
     )
@@ -191,7 +195,9 @@ class MockProblem(problem_type.ProblemType):
     oracle_next_action_idx = 1
     return common.ActorAction(
         chosen_action_idx=action_idx,
-        oracle_next_action_idx=oracle_next_action_idx), action_val
+        oracle_next_action_idx=oracle_next_action_idx,
+        action_val=action_val,
+        log_prob=0.0)
 
   def eval(self, action_list, env_list):
     return {'result': 1000.0}

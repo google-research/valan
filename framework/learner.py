@@ -22,7 +22,7 @@ method.
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import copy
@@ -44,7 +44,6 @@ from valan.framework import loss_fns
 from valan.framework import problem_type as framework_problem_type
 from valan.framework import utils
 
-from tensorflow.contrib import rnn
 from tensorflow.python.client import device_lib  
 
 FLAGS = flags.FLAGS
@@ -155,7 +154,7 @@ def _create_server(
 
 def _transpose_batch(specs: common.ActorOutput, *actor_outputs):
   """Transpose a batch from the dataset into time-major order."""
-  time_major_fn = lambda t: tf.nest.map_structure(rnn.transpose_batch_time, t)
+  time_major_fn = lambda t: tf.nest.map_structure(utils.transpose_batch_time, t)
   actor_outputs = tf.nest.pack_sequence_as(specs, actor_outputs)
   actor_outputs = actor_outputs._replace(
       env_output=time_major_fn(actor_outputs.env_output),

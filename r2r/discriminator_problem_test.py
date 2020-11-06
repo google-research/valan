@@ -106,15 +106,15 @@ class DiscriminatorProblemTest(tf.test.TestCase, parameterized.TestCase):
     action_vals = []
     path_history = []
     for i in range(len(golden_path)):
-      _, action_val = problem.select_actor_action(env_output, None)
-      action_vals.append(action_val)
+      action = problem.select_actor_action(env_output, None)
+      action_vals.append(action.action_val)
       path_history.append(env_output.observation[constants.PANO_ID])
       if i == 0:
         self.assertTrue(env_output.observation[constants.IS_START])
       else:
         self.assertFalse(env_output.observation[constants.IS_START])
       # Update to the next step.
-      env_output = problem._env.step(action_val)
+      env_output = problem._env.step(action.action_val)
     self.assertEqual(path_history, golden_path)
     self.assertEqual(action_vals, golden_path[1:] + [0])
 

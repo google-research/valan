@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from __future__ import google_type_annotations
+
 from __future__ import print_function
 
 import os
@@ -118,11 +118,10 @@ def run_evaluation(
         env_output, agent_output = utils.remove_time_batch_dim(
             env_output, agent_output)
 
-        _, action_val = problem_type.select_actor_action(
-            env_output, agent_output)
-        env_output = env.step(action_val)
+        action = problem_type.select_actor_action(env_output, agent_output)
+        env_output = env.step(action.action_val)
 
-        action_list.append(action_val)
+        action_list.append(action.action_val)
         env_output_list.append(env_output)
 
         if env_output.done:
