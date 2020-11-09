@@ -41,7 +41,7 @@ bash ./docker/build.sh
 docker_version=$(docker version --format '{{.Server.Version}}')
 # Launch jobs with all available GPUs.
 if [[ "${docker_version}" > "19.03" ]]; then
-  docker run --gpus all --entrypoint ./scripts/local_run.sh -it -P \
+  docker run --gpus all --entrypoint ./scripts/local_run.sh -it -p 6006:6006 \
    --name "valan_${PROBLEM}_local_run_gpu" --rm \
     valan "${PROBLEM}" "${TRAIN_DATA}" "${EVAL_DATA}" "${NUM_ACTORS}" \
     "${NUM_EVAL_ACTORS}"
@@ -51,7 +51,7 @@ fi
 if [[ "$?" > "0" ]] || [[ "${docker_version}" < "19.03" ]]; then
   echo ""
   echo "No valid GPUs found. Use CPUs only!!"; sleep 3
-  docker run --entrypoint ./scripts/local_run.sh -it -P \
+  docker run --entrypoint ./scripts/local_run.sh -it -p 6006:6006 \
    --name "valan_${PROBLEM}_local_run" --rm \
     valan "${PROBLEM}" "${TRAIN_DATA}" "${EVAL_DATA}" "${NUM_ACTORS}" \
     "${NUM_EVAL_ACTORS}"

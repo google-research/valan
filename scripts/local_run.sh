@@ -58,6 +58,7 @@ mkdir -p "${LOG_DIR}"
 tmux new-session -d -t valan  # Create a session and group it as `valan`.
 cat >"${LOG_DIR}"/instructions <<EOF
 ********************************************************************************
+
 Welcome to the VALAN local training of problem "${PROBLEM}" with "${NUM_ACTORS}"
 train actors and "${NUM_EVAL_ACTORS}" eval actors. VALAN uses tmux for easy
 navigation between the learner and different actors and the eval_aggregator, all
@@ -67,14 +68,18 @@ To switch to a specific task, press CTRL+b, then [tab id],
   e.g., CTRL+b then 0 for the learner, CTRL+b then 1 for actor_1, etc.
 
 
-To monitor the training and eval progress, launch Tensorboard as follows.
-(Note that the eval results will show up after accumulating 3 checkpoints. So
-please be patient.)
-    \`tensorboard --logdir "${LOG_DIR}"\`
+To monitor the training and eval progress, connect to Tensorboard using the link
+below. Note that the eval results will show up after accumulating 3 checkpoints.
+So please be patient.
+    http://localhost:6006/
 
 
-You can stop training at any time by executing:
+If running on a local machine, you can stop training at any time by executing:
     \`./stop_local.sh\`
+
+If this job is running in a docker container, you can stop and remove the
+container by typing CTRL+b then d. Note that this will completely remove the
+container.
 
 ********************************************************************************
 EOF
@@ -84,8 +89,6 @@ tmux send-keys "python3 check_gpu.py 2> /dev/null"
 tmux send-keys KPEnter
 tmux send-keys "cat ${LOG_DIR}/instructions"
 tmux send-keys KPEnter
-tmux send-keys "./stop_local.sh valan-0"  # Only send key but does not run.
-
 
 # Launch learner.
 tmux new-window -d -n learner
@@ -118,5 +121,9 @@ COMMAND="${AGGREGATOR_BINARY} --logdir=${LOG_DIR} --logtostderr "\
 "--server_address=${AGG_SERVER_ADDRESS} --aggregator_prefix=eval_agg"
 tmux send-keys -t "aggregator" "${COMMAND}" ENTER
 
+# Launch Tensorboard.
+tmux new-window -d -n "tensorboard"
+COMMAND="tensorboard --logdir=${LOG_DIR} --port=6006 --bind_all"
+tmux send-keys -t "tensorboard" "${COMMAND}" ENTER
 
 tmux attach -t valan
