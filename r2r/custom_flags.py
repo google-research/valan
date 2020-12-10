@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Actor configurations."""
-
-from __future__ import absolute_import
-from __future__ import division
-
-from __future__ import print_function
+"""Additional hyperparam flags specific to this problem."""
 
 from absl import flags
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('task', 0, 'Task id.')
-flags.DEFINE_integer('num_tasks', 40, 'Number of sharded tasks.')
+# Settings for env_config.py
+flags.DEFINE_string(
+    'scan_base_dir', '',
+    'Base dir for Matterport scan data, e.g., scans, connections.')
+flags.DEFINE_string('data_base_dir', '', 'Base dir for input JSON files.')
+flags.DEFINE_string('vocab_dir', '', 'Base dir for input vocab files.')
+flags.DEFINE_string('image_features_dir', '',
+                    'Dir containing pre-generated image features.')
+flags.DEFINE_string('vocab_file', '', 'File name for vocabulary.')

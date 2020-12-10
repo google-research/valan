@@ -29,3 +29,8 @@ RUN protoc -I=${PROTO_DIR} --python_out=${PROTO_DIR} ${PROTO_DIR}/image_features
 
 # Expose port for tensorboard.
 EXPOSE 6006
+
+ENV PYTHONPATH="/"
+
+ENTRYPOINT ["python", "gcp/run.py"]
+

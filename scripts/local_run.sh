@@ -37,6 +37,11 @@ ACTOR_BINARY="CUDA_VISIBLE_DEVICES='' python ../r2r/actor_main.py"
 LEARNER_BINARY="python ../r2r/learner_main.py"
 AGGREGATOR_BINARY="CUDA_VISIBLE_DEVICES='' python ../r2r/eval_aggregator_main.py"
 
+SCAN_BASE_DIR="/tmp/valan/testdata/"
+DATA_BASE_DIR="/tmp/valan/testdata/"
+VOCAB_DIR="/tmp/valan/testdata/"
+IMAGE_FEATURES_DIR="/tmp/valan/testdata/image_features_efficientnet/"
+
 SERVER_ADDRESS="unix:/tmp/foo"
 AGG_SERVER_ADDRESS="${SERVER_ADDRESS}_agg"
 LOG_DIR="/tmp/agent"
@@ -94,7 +99,9 @@ tmux send-keys KPEnter
 tmux new-window -d -n learner
 
 COMMAND="${LEARNER_BINARY} --logtostderr --pdb_post_mortem "\
-" --problem=${PROBLEM} --server_address=${SERVER_ADDRESS} $@"
+"--problem=${PROBLEM} --server_address=${SERVER_ADDRESS} "\
+"--scan_base_dir=${SCAN_BASE_DIR} --data_base_dir=${DATA_BASE_DIR} "\
+"--vocab_dir=${VOCAB_DIR} --image_features_dir=${IMAGE_FEATURES_DIR}  $@"
 tmux send-keys -t "learner" "${COMMAND}" ENTER
 
 # Launch actors for training.
@@ -102,7 +109,9 @@ for (( id=0; id<${NUM_ACTORS}; id++ )); do
     tmux new-window -d -n "actor_${id}"
     COMMAND="${ACTOR_BINARY} --data_source=${TRAIN_DATA_SOURCE} --logtostderr "\
 "--pdb_post_mortem --task=${id} --num_tasks=${NUM_ACTORS} "\
-"--problem=${PROBLEM} --server_address=${SERVER_ADDRESS}  $@"
+"--problem=${PROBLEM} --server_address=${SERVER_ADDRESS} "\
+"--scan_base_dir=${SCAN_BASE_DIR} --data_base_dir=${DATA_BASE_DIR} "\
+"--vocab_dir=${VOCAB_DIR} --image_features_dir=${IMAGE_FEATURES_DIR}  $@"
     tmux send-keys -t "actor_${id}" "${COMMAND}" ENTER
 done
 
@@ -111,7 +120,9 @@ for (( id=0; id<${NUM_EVAL_ACTORS}; id++ )); do
     tmux new-window -d -n "evaler_${id}"
     COMMAND="${ACTOR_BINARY} --data_source=${EVAL_DATA_SOURCE} --mode=eval"\
 " --logtostderr --pdb_post_mortem --task=${id} --num_tasks=${NUM_EVAL_ACTORS} "\
-"--problem=${PROBLEM} --server_address=${AGG_SERVER_ADDRESS}  $@"
+"--problem=${PROBLEM} --server_address=${AGG_SERVER_ADDRESS} "\
+"--scan_base_dir=${SCAN_BASE_DIR} --data_base_dir=${DATA_BASE_DIR} "\
+"--vocab_dir=${VOCAB_DIR} --image_features_dir=${IMAGE_FEATURES_DIR}  $@"
     tmux send-keys -t "evaler_${id}" "${COMMAND}" ENTER
 done
 

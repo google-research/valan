@@ -25,6 +25,7 @@ from valan.framework import actor
 from valan.framework import common
 from valan.framework import eval_actor
 from valan.framework import hyperparam_flags  
+from valan.r2r import custom_flags  
 from valan.r2r import ndh_problem
 from valan.r2r import r2r_problem
 from valan.r2r.multi_task import mt_problem

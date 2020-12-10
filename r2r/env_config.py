@@ -13,20 +13,23 @@
 # limitations under the License.
 
 """Default configuration used for R2R environment."""
+from absl import flags
 
 import numpy as np
 from valan.framework import eval_metric
 from valan.framework import hparam
-
 from valan.r2r import constants
 
+FLAGS = flags.FLAGS
+
+# Default fixed params for env.
 DEFAULT_ENV_CONFIG = {
     # Base dir for scan data, eg., `scans`, `connections`.
-    'scan_base_dir': '/tmp/valan/testdata/',  # Example for testing.
+    'scan_base_dir': '',  # Can be updated by FLAGS.scan_base_dir.
     # Base dir for input JSON and vocab files.
-    'data_base_dir': '/tmp/valan/testdata/',  # Example for testing.
+    'data_base_dir': '',  # Can be updated by FLAGS.data_base_dir.
     # Base dir for vocab.
-    'vocab_dir': '/tmp/valan/testdata/',  # Example for testing.
+    'vocab_dir': '',  # Can be updated by FLAGS.vocab_dir.
     'vocab_file': 'vocab.txt',
     # Number of image pathes for each panorama, typically 36.
     'images_per_pano': 36,
@@ -38,7 +41,7 @@ DEFAULT_ENV_CONFIG = {
     # Field of View used to generate image features.
     'fov': 0.17,
     # Dir containing pre-generated image features.
-    'image_features_dir': '/tmp/valan/testdata/image_features_efficientnet/',
+    'image_features_dir': '',  # Can be updated by FLAGS.image_features_dir.
     # Image feature dimension size. 1792 for EfficientNet B4.
     'image_encoding_dim': 1792,
     # Direction encoding dimension size.
@@ -192,4 +195,16 @@ def get_default_env_config():
   """Returns default config using values from dict `DEFAULT_ENV_CONFIG`."""
   config = hparam.HParams(**DEFAULT_ENV_CONFIG)
   config.reward_fn = RewardFunction.get_reward_fn(config.reward_fn_type)
+
+  # Update directories if set in FLAGS.
+  if FLAGS.scan_base_dir:
+    config.scan_base_dir = FLAGS.scan_base_dir
+  if FLAGS.data_base_dir:
+    config.data_base_dir = FLAGS.data_base_dir
+  if FLAGS.vocab_dir:
+    config.vocab_dir = FLAGS.vocab_dir
+  if FLAGS.vocab_file:
+    config.vocab_file = FLAGS.vocab_file
+  if FLAGS.image_features_dir:
+    config.image_features_dir = FLAGS.image_features_dir
   return config

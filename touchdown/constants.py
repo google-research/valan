@@ -19,7 +19,6 @@ The remainder of constants is defined streetview_common subdir.
 
 from __future__ import absolute_import
 from __future__ import division
-
 from __future__ import print_function
 
 from valan.streetview_common import streetview_constants

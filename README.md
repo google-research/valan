@@ -45,7 +45,7 @@ use the code from this repository in your work.
 
 ## Prerequisites
 
-Before getting started, we two main packages to run VALAN on a local machine:
+Before getting started, we need two main packages to run VALAN:
 docker and git.
 
 + Docker
@@ -55,7 +55,8 @@ docker and git.
         + For Ubuntu: https://docs.docker.com/engine/install/ubuntu
         + For Debian: https://docs.docker.com/engine/install/debian
     2. Make sure docker works as non-root user (i.e., without `sudo`) by
-      following [this instruction](https://docs.docker.com/install/linux/linux-postinstall)         and section "**Manage Docker as a non-root user**" inside.
+      following [this instruction](https://docs.docker.com/install/linux/linux-postinstall)
+      and section "**Manage Docker as a non-root user**" inside.
         + Now the following command should work without `sudo`:
 
             ```
@@ -76,7 +77,7 @@ docker and git.
         cd valan
         ```
 
-+ Optional: To do distributed training on the GCP AI Platform you also need
++ Optional: To launch distributed training on the GCP AI-Platform you also need
   to sign up for a GCP account and install the Cloud SDK.
     - Follow https://cloud.google.com/ai-platform
 
@@ -124,7 +125,81 @@ docker and git.
 
 ### Running on distributed environment (e.g., GCP)
 
-TODO
+We provide the tool and a concrete example to run VALAN on GCP with distributed learning.
+Note that training the AI Platform requires signing up for a GCP account and will will
+incurr charges for using the compute resources. See: https://cloud.google.com/ai-platform
+
++ Set up GCP SDK and project
+
+    - To get started, install the GCP Cloud SDK following this instruction
+      https://cloud.google.com/sdk/docs/quickstart and set up your GCP project.
+    - Enable billing for your project.
+    - Set up your Cloud Storage bucket for you AI Platform account following this
+      instruction: https://cloud.google.com/ai-platform/training/docs/working-with-cloud-storage.
+      Note that all of your input and training data will be stored in Cloud buckets.
+    - Authenticate your `gcloud` account and set your default project:
+
+      ```
+      gcloud auth login
+      gcloud config set project [YOUR_PROJECT]
+      ```
+
++ Optional: prepare your Matterport 3D data and image features.
+
+    TODO
+
++ Launch training job on GCP
+
+    Each full training job consists of a learner (the main training node), a group
+    of train actors that process and enqueue data for the learner concurrently, as
+    well as several sets of eval actors for the evaluation job, all of which run
+    asynchronously with the learner.  The evaluation job can have multiple data
+    sources, for instance, "train", "val_seen", and "val_unseen" for the training
+    set, the "val_seen" set, and "val_unseen" set respectively. Each of them has its
+    own group of actors plus one eval aggregator that dequeues and aggregates
+    evaluated examples from all eval actors within this group.
+
+    The learner always runs on the "master" node with an accelerator. The train
+    actors run on the "worker" nodes and use multi-threading to concurrently load
+    and process the input data. All eval actors and eval aggregators run on the
+    "evaluator" nodes. The learner runs on accelerator and all actors run on
+    CPUs.
+
+    - To train a VLN agent using a toy dataset (containing only 3 scans), run the
+      following:
+
+      ```
+      bash gcp/r2r_train_3scans.sh
+      ```
+      This script will first make a copy of `./r2r/testdata`  to a GCS bucket
+      `gs://valan/testdata`, then launch a training example with 1 GPU, 12
+      training actors (3 workers each runs 4 threads), 4 eval actors (including
+      1 eval aggregator) and 4 test actors (including 1 test aggregator).
+
+      To monitor the training status using TensorBoard:
+      https://cloud.google.com/ai-platform/docs/getting-started-tensorflow-estimator#tensorboard-local
+
+      ```
+      tensorboard --logdir=gs://valan/$JOB_DIR
+      ```
+
+      To monitor the job details and logs: http://console.cloud.google.com/ai-platform
+
+      More details on job monitoring can be found here:
+      https://cloud.google.com/ai-platform/training/docs/monitor-training#console
+
+
+    - To train a VLN agent using the full set of R2R data, make sure you data is
+      copied to your GCS bucket, then change the dir paths and configurations
+      defined in the following script accordingly. Then:
+
+      ```
+      bash gcp/r2r_train.sh
+      ```
+
+      Similarly, the training status can be monitored using TensorBoard and the
+      AI-platform console as aforementioned.
+
 
 ## Disclaimer
 

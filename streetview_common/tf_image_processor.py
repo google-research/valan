@@ -35,7 +35,8 @@ class TFImageProcessor(object):
 
   def __init__(self,
                tf_hub_module_spec=None,
-               tf_hub_module_path=None,):
+               tf_hub_module_path=None,
+               use_jpeg_input=True):
     """Creates an instance to extract image features from a pre-trained model.
 
     The model to use may be specified as a TF-hub module (either by ModuleSpec
@@ -56,6 +57,8 @@ class TFImageProcessor(object):
       tf_hub_module_path: str or None, the location of the TF-hub module to load
         in a format understood by `load_module_spec()` (URL,
         '@internal/module/name', '/on/disk/path', etc.)
+      use_jpeg_input: Set to True to pass jpeg-encoded Image bytes data,
+        otherwise a uint8 numpy or tf tensor will be expected.
 
     Raises:
       ValueError: if not exactly one kwarg specifying the model is given.
@@ -67,6 +70,7 @@ class TFImageProcessor(object):
     self._input = None
     self._output = None
     self._session = None
+    self._use_jpeg_input = use_jpeg_input
 
     num_kwargs = sum(
         int(kwarg is not None) for kwarg in
@@ -96,8 +100,12 @@ class TFImageProcessor(object):
       Tensor <float>[batch_size=1, height, width, channels=3] representing the
         preprocessed image tensor.
     """
-    self._input = tf.placeholder(tf.string)
-    image = tf.image.decode_jpeg(self._input, channels=3)
+    if self._use_jpeg_input:
+      self._input = tf.placeholder(tf.string)
+      image = tf.image.decode_jpeg(self._input, channels=3)
+    else:  # Allow for uncompressed image inputs.
+      self._input = tf.placeholder(tf.uint8)
+      image = self._input
     image = tf.image.convert_image_dtype(image, tf.float32)
     resized_image = tf.image.resize_image_with_pad(
         image, desired_size[0], desired_size[1])

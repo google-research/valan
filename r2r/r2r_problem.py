@@ -60,9 +60,9 @@ class R2RProblem(problem_type.ProblemType):
     self._data_sources = data_sources
     self._curriculum = curriculum
 
-    if agent_type == 'r2r':
+    if agent_type.lower() == 'r2r':
       self._agent = agent.R2RAgent(agent_config.get_r2r_agent_config())
-    elif agent_type == 'mt':
+    elif agent_type.lower() == 'mt':
       self._agent = mt_agent.MTEnvAgAgent(mt_agent_config.get_agent_config())
     else:
       raise ValueError('Invalid agent_type: {}'.format(agent_type))

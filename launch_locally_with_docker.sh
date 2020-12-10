@@ -21,7 +21,7 @@ die()
 }
 
 
-PROBLEMS="R2R|NDH|MT"
+PROBLEMS="R2R|NDH|R2R+NDH"
 
 [[ "$#" -eq 5 ]] || die "Usage: launch_locally_with_docker.sh ["${PROBLEMS}"] \
  [train_dataset] [eval_dataset] [Num train actors] [Num eval actors]"

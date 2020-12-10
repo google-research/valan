@@ -23,6 +23,7 @@ from absl import logging
 from valan.framework import common
 from valan.framework import hyperparam_flags  
 from valan.framework import learner
+from valan.r2r import custom_flags  
 from valan.r2r import ndh_problem
 from valan.r2r import r2r_problem
 from valan.r2r.multi_task import mt_problem
@@ -35,10 +36,16 @@ def main(_):
   runtime_config = common.RuntimeConfig(task_id=0, num_tasks=1)
   if FLAGS.problem == 'R2R':
     problem = r2r_problem.R2RProblem(
-        runtime_config, mode=None, data_sources=None)
+        runtime_config,
+        mode=None,
+        data_sources=None,
+        agent_type=FLAGS.agent_type)
   elif FLAGS.problem == 'NDH':
     problem = ndh_problem.NDHProblem(
-        runtime_config, mode=None, data_sources=None)
+        runtime_config,
+        mode=None,
+        data_sources=None,
+        agent_type=FLAGS.agent_type)
   elif FLAGS.problem == 'R2R+NDH':
     problem = mt_problem.MTProblem(runtime_config)
   else:

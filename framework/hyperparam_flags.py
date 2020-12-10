@@ -16,7 +16,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
 from __future__ import print_function
 
 from absl import flags
@@ -25,7 +24,7 @@ FLAGS = flags.FLAGS
 
 # Common task settings.
 flags.DEFINE_string('logdir', '/tmp/agent', 'TensorFlow log directory.')
-flags.DEFINE_string('problem', 'R2R', 'Problem type, e.g., R2R | NDH | R2R+NDH')
+flags.DEFINE_string('problem', '', 'Problem type, e.g., R2R | NDH | R2R+NDH')
 flags.DEFINE_integer('task', 0, 'Task id.')
 flags.DEFINE_integer('num_tasks', 40, 'Number of sharded tasks.')
 flags.DEFINE_integer('unroll_length', 10, 'Unroll length in agent steps.')
@@ -37,7 +36,10 @@ flags.DEFINE_string(
 
 
 # Actor settings.
-flags.DEFINE_string('agent_type', 'r2r', 'Agent type, e.g., r2r | mt .')
+flags.DEFINE_string(
+    'agent_type', 'R2R',
+    'Agent type for a given problem, e.g., the R2R problem has two types of '
+    'agents, R2R and MT.')
 flags.DEFINE_string(
     'data_source', '',
     'A comma-separated list of sources to read the data from.'
