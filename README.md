@@ -98,7 +98,7 @@ docker and git.
     following:
 
     ```
-    sh launch_locally_with_docker.sh R2R R2R_3scans R2R_3scans 3 3
+    bash launch_locally_with_docker.sh R2R R2R_3scans R2R_3scans 3 3
     ```
 
     To stop an individual worker, type CTRL+C in the worker's Tmux window. To
@@ -113,7 +113,7 @@ docker and git.
     You can run the job with your own R2R dataset as follows:
 
     ```
-    sh launch_locally_with_docker.sh PROBLEM TRAIN_DATA EVAL_DATA NUM_ACTORS NUM_EVAL_ACTORS
+    bash launch_locally_with_docker.sh PROBLEM TRAIN_DATA EVAL_DATA NUM_ACTORS NUM_EVAL_ACTORS
     ```
 
     Note that the full R2R dataset is quite large and has 56 scans with 14k
@@ -199,6 +199,10 @@ incurr charges for using the compute resources. See: https://cloud.google.com/ai
 
       Similarly, the training status can be monitored using TensorBoard and the
       AI-platform console as aforementioned.
+
+      Using the configuration from above and pre-extracted EfficientNet-B4 features,
+      we can get an agent with a success rate of 38.5, SDTW of 31.8, and SPL of 34,
+      trained on the `R2R_train.json` dataset.
 
 
 ## Disclaimer
