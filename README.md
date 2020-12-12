@@ -201,7 +201,7 @@ incurr charges for using the compute resources. See: https://cloud.google.com/ai
       AI-platform console as aforementioned.
 
       Using the configuration from above and pre-extracted EfficientNet-B4 features,
-      we can get an agent with a success rate of 38.5, SDTW of 31.8, and SPL of 34,
+      we can get an agent with a success rate of 38.5, SDTW of 32, and SPL of 34,
       trained on the `R2R_train.json` dataset.
 
 
