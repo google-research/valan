@@ -79,10 +79,11 @@ So please be patient.
     http://localhost:6006/
 
 
-If running on a local machine, you can stop training at any time by executing:
+To stop:
+- If running on a local machine, you can stop training at any time by executing:
     \`./stop_local.sh\`
 
-If this job is running in a docker container, you can stop and remove the
+- If running in a Docker container, you can stop and remove the
 container by typing CTRL+b then d. Note that this will completely remove the
 container.
 

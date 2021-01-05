@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.3.1-gpu
+FROM tensorflow/tensorflow:2.3.0-gpu
 
 RUN apt-get update && apt-get install -y \
     wget \
@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y \
     tmux
 
 # Install python packages.
-RUN pip install tensorflow_probability
+RUN python3 -m pip install --upgrade pip
+RUN pip install tensorflow_probability==0.11.1
 RUN pip install networkx==2.4
 RUN pip install matplotlib
 
