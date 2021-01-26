@@ -33,7 +33,7 @@ _INFINITY = 1e9
 class R2RAgent(base_agent.BaseAgent):
   """R2R Agent."""
 
-  def __init__(self, config):
+  def __init__(self, config, mode=None):
     """Initialize R2R Agent."""
     super(R2RAgent, self).__init__(name='agent_r2r')
 
@@ -43,13 +43,18 @@ class R2RAgent(base_agent.BaseAgent):
         pretrained_embed_path=config.pretrained_embed_path,
         oov_bucket_size=config.oov_bucket_size,
         vocab_size=config.vocab_size,
-        word_embed_dim=config.word_embed_dim
+        word_embed_dim=config.word_embed_dim,
+        mode=mode,
     )
 
     self._embed_action = config.embed_action if hasattr(
         config, 'embed_action') else False
     self._image_encoder = image_encoder.ImageEncoder(
-        256, 512, num_hidden_layers=2, concat_context=self._embed_action)
+        256,
+        512,
+        num_hidden_layers=2,
+        concat_context=self._embed_action,
+        mode=mode)
 
     # Learnable transform of initial state from instruction encoder.
     self._encoder_transform = tf.keras.layers.Dense(

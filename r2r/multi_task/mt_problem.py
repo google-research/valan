@@ -36,10 +36,11 @@ DebugInfo = collections.namedtuple(
 class MTProblem(problem_type.ProblemType):
   """Problem type for both VLN and NDH combined for TRAIN only."""
 
-  def __init__(self, runtime_config):
+  def __init__(self, runtime_config, mode):
     self._runtime_config = runtime_config
 
-    self._agent = mt_agent.MTEnvAgAgent(mt_agent_config.get_agent_config())
+    self._agent = mt_agent.MTEnvAgAgent(
+        mt_agent_config.get_agent_config(), mode=mode)
     self._prob_ac = 0.5
     self._env = None
     self._loss_type = None

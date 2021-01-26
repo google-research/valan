@@ -62,7 +62,7 @@ def main(_):
     if FLAGS.mode != 'train':
       raise ValueError('Multi-tasking is only supported for training. '
                        'Use task-specific problems during eval.')
-    problem = mt_problem.MTProblem(runtime_config)
+    problem = mt_problem.MTProblem(runtime_config, mode=FLAGS.mode)
   else:
     raise ValueError('Unsupported problem type encountered: {}'.format(
         FLAGS.problem))

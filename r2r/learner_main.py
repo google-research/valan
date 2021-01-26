@@ -37,17 +37,17 @@ def main(_):
   if FLAGS.problem == 'R2R':
     problem = r2r_problem.R2RProblem(
         runtime_config,
-        mode=None,
+        mode=FLAGS.mode,
         data_sources=None,
         agent_type=FLAGS.agent_type)
   elif FLAGS.problem == 'NDH':
     problem = ndh_problem.NDHProblem(
         runtime_config,
-        mode=None,
+        mode=FLAGS.mode,
         data_sources=None,
         agent_type=FLAGS.agent_type)
   elif FLAGS.problem == 'R2R+NDH':
-    problem = mt_problem.MTProblem(runtime_config)
+    problem = mt_problem.MTProblem(runtime_config, mode=FLAGS.mode)
   else:
     raise ValueError('Unsupported problem type encountered: {}'.format(
         FLAGS.problem))

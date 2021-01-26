@@ -58,9 +58,11 @@ class DiscriminatorProblem(problem_type.ProblemType):
         agent_config.agent_type
         if hasattr(agent_config, 'agent_type') else 'default')
     if agent_type == 'default':
-      self._agent = discriminator_agent.DiscriminatorAgent(agent_config)
+      self._agent = discriminator_agent.DiscriminatorAgent(
+          agent_config, mode=mode)
     elif agent_type == 'v2':
-      self._agent = discriminator_agent.DiscriminatorAgentV2(agent_config)
+      self._agent = discriminator_agent.DiscriminatorAgentV2(
+          agent_config, mode=mode)
 
   def _get_eval_dict(self):
     return {

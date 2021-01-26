@@ -46,7 +46,7 @@ class GradReverseLayer(tf.keras.layers.Layer):
 class MTEnvAgAgent(base_agent.BaseAgent):
   """Multitasking env-agnostic Agent."""
 
-  def __init__(self, config):
+  def __init__(self, config, mode=None):
     """Initialize the Agent."""
     super(MTEnvAgAgent, self).__init__(name='agent_mt_envag')
 
@@ -65,6 +65,7 @@ class MTEnvAgAgent(base_agent.BaseAgent):
         oov_bucket_size=config.oov_bucket_size,
         vocab_size=config.vocab_size,
         word_embed_dim=config.word_embed_dim,
+        mode=mode,
     )
 
     self._ndh_instruction_encoder = None
@@ -76,10 +77,11 @@ class MTEnvAgAgent(base_agent.BaseAgent):
           oov_bucket_size=config.oov_bucket_size,
           vocab_size=config.vocab_size,
           word_embed_dim=config.word_embed_dim,
+          mode=mode,
       )
 
     self._image_encoder = image_encoder.ImageEncoder(
-        256, 512, num_hidden_layers=2)
+        256, 512, num_hidden_layers=2, mode=mode)
 
     # Text attention.
     self._text_attention_size = 512

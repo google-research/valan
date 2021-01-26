@@ -51,9 +51,11 @@ class NDHProblem(problem_type.ProblemType):
     self._data_sources = data_sources
 
     if agent_type.lower() == 'r2r':
-      self._agent = agent.R2RAgent(agent_config.get_ndh_agent_config())
+      self._agent = agent.R2RAgent(
+          agent_config.get_ndh_agent_config(), mode=mode)
     elif agent_type.lower() == 'mt':
-      self._agent = mt_agent.MTEnvAgAgent(mt_agent_config.get_agent_config())
+      self._agent = mt_agent.MTEnvAgAgent(
+          mt_agent_config.get_agent_config(), mode=mode)
     else:
       raise ValueError('Invalid agent_type: {}'.format(agent_type))
 
