@@ -106,11 +106,12 @@ class EnvTest(tf.test.TestCase):
         expected_pitch=0.,
         expected_scan_id=scan_id,
         expected_oracle_action=self._get_pano_id(
-            'ba27da20782d4e1a825f0a133ad84da9', scan_id))
+            'ba27da20782d4e1a825f0a133ad84da9', scan_id),
+        expected_prev_action=np.zeros(320, dtype=np.float32))
 
   def testStep(self):
     scan_id = 0  # testdata only has single scan 'gZ6f7yhEvPG'
-    _ = self._env.reset()
+    obs = self._env.reset()
     golden_path = [
         '80929af5cf234ae38ac3a2a4e60e4342', 'ba27da20782d4e1a825f0a133ad84da9',
         '47d8a8282c1c4a7fb3eeeacc45e9d959', '46cecea0b30e4786b673f5e951bf82d4'
@@ -130,9 +131,13 @@ class EnvTest(tf.test.TestCase):
         expected_oracle_action = self._get_pano_id(golden_path[i + 2], scan_id)
       else:
         expected_oracle_action = constants.STOP_NODE_ID
+      action_idx = np.argwhere(
+          obs.observation[constants.CONN_IDS] == action).item()
+      expected_prev_action = obs.observation[constants.CONN_ENC][action_idx]
+      obs = self._env.step(action)
       verify_env_output(
           self,
-          self._env.step(action),
+          obs,
           expected_reward=1,  #  Moving towards goal.
           expected_done=False,
           expected_info='',
@@ -142,7 +147,8 @@ class EnvTest(tf.test.TestCase):
           expected_heading=expected_heading,
           expected_pitch=expected_pitch,
           expected_scan_id=scan_id,
-          expected_oracle_action=expected_oracle_action)
+          expected_oracle_action=expected_oracle_action,
+          expected_prev_action=expected_prev_action)
 
     # Stop at goal pano. Terminating the episode results in resetting the
     # observation to next episode.
@@ -160,7 +166,8 @@ class EnvTest(tf.test.TestCase):
         expected_pitch=0.,
         expected_scan_id=scan_id,
         expected_oracle_action=self._get_pano_id(
-            'ba27da20782d4e1a825f0a133ad84da9', scan_id))
+            'ba27da20782d4e1a825f0a133ad84da9', scan_id),
+        expected_prev_action=np.zeros(320, dtype=np.float32))
 
   def testSetState(self):
     scan_id = 0  # testdata only has single scan 'gZ6f7yhEvPG'
@@ -173,10 +180,16 @@ class EnvTest(tf.test.TestCase):
         self.data_dir, 'connections/gZ6f7yhEvPG_connectivity.json')
     graph = load_nav_graph(nav_graph_filepath)
     states = [self._env.get_state()]
+    expected_prev_action = [np.zeros(320, dtype=np.float32)]
 
     # Step through the trajectory and save states.
     for i, action in enumerate(
         [self._get_pano_id(p, scan_id) for p in golden_path[1:]]):
+      obs = self._env.get_current_env_output()
+      action_idx = np.argwhere(
+          obs.observation[constants.CONN_IDS] == action).item()
+      expected_prev_action.append(
+          obs.observation[constants.CONN_ENC][action_idx])
       self._env.step(action)
       states.append(self._env.get_state())
     self._env.step(constants.STOP_NODE_ID)
@@ -208,7 +221,8 @@ class EnvTest(tf.test.TestCase):
           expected_heading=expected_heading,
           expected_pitch=expected_pitch,
           expected_scan_id=scan_id,
-          expected_oracle_action=expected_oracle_action)
+          expected_oracle_action=expected_oracle_action,
+          expected_prev_action=expected_prev_action[i])
       if i + 1 < len(golden_path):
         if i % 2 == 0:  # Alternatively set state or choose action to test both.
           self._env.set_state(states[i+1])
@@ -306,7 +320,8 @@ def get_heading_pitch_distance(graph, from_pano_name, to_pano_name):
 def verify_env_output(test, env_output, expected_reward, expected_done,
                       expected_info, expected_time_step, expected_path_id,
                       expected_pano_name, expected_heading, expected_pitch,
-                      expected_scan_id, expected_oracle_action):
+                      expected_scan_id, expected_oracle_action,
+                      expected_prev_action=None):
   test.assertEqual(expected_reward, env_output.reward)
   test.assertEqual(expected_done, env_output.done)
   test.assertEqual(expected_info, env_output.info)
@@ -325,6 +340,9 @@ def verify_env_output(test, env_output, expected_reward, expected_done,
                          places=1)
   test.assertEqual(expected_scan_id, obs[constants.SCAN_ID])
   test.assertEqual(expected_oracle_action, obs[constants.ORACLE_NEXT_ACTION])
+  if expected_prev_action is not None:
+    np.testing.assert_array_almost_equal(expected_prev_action,
+                                         obs[constants.PREV_ACTION_ENC])
   instr_len = (obs[constants.INS_TOKEN_IDS] > 0).sum()
   test.assertEqual(instr_len, obs[constants.INS_LEN])
   valid_conn_mask = obs[constants.CONN_IDS] >= 0
