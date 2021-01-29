@@ -25,7 +25,7 @@ import tensorflow.compat.v2 as tf
 FLAGS = flags.FLAGS
 
 
-class ImageEncoder(tf.keras.Model):
+class ImageEncoder(tf.keras.layers.Layer):
   """Encode text using glove embedding and Bi-LSTM."""
 
   def __init__(self,
