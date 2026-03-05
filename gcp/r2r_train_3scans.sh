@@ -40,8 +40,8 @@ NUM_TOTAL_EVAL_WORKERS=$((3 + 3 + 2))  # Add 2 for the aggregators.
 
 
 # Copy toy data to gcs bucket.
-gsutil ls "${GS_BUCKET}" >/dev/null 2>&1 || gsutil mb "${GS_BUCKET}"
-(gsutil ls "${SCAN_BASE_DIR}" >/dev/null 2>&1  &&  gsutil ls "${IMAGE_FEATURES_DIR}" >/dev/null 2>&1) || gsutil -m cp -r ../r2r/testdata "${GS_BUCKET}"
+gcloud storage ls "${GS_BUCKET}" >/dev/null 2>&1 || gcloud storage buckets create "${GS_BUCKET}"
+(gcloud storage ls "${SCAN_BASE_DIR}" >/dev/null 2>&1  &&  gcloud storage ls "${IMAGE_FEATURES_DIR}" >/dev/null 2>&1) || gcloud storage cp --recursive ../r2r/testdata "${GS_BUCKET}"
 
 
 # Set up GCP project and launch function.

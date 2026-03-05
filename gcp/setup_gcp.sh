@@ -18,7 +18,7 @@ submit_training_job () {
   bash $DIR/../docker/push.sh
 
   # Check GCS bucket.
-  gsutil ls "${GS_BUCKET}" || (echo "GCS bucket ${GS_BUCKET} does not exist!" && exit 1)
+  gcloud storage ls "${GS_BUCKET}" || (echo "GCS bucket ${GS_BUCKET} does not exist!" && exit 1)
 
   JOB_NAME="VALAN_${PROBLEM}_$(date +"%Y%b%d_%H%M%S")"
   # Assign job dir if not defined.
